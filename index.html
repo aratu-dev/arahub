@@ -1929,16 +1929,10 @@
           <input type="date" id="mc-data" onchange="atualizarHorariosMC()">
         </div>
 
-        <div class="form-group">
-          <label>Horário *</label>
-          <select id="mc-horario">
-            <option value="">Selecione a data primeiro</option>
-          </select>
-        </div>
-
-        <div id="mc-horarios-visual" style="grid-column:span 2;display:none">
+        <div id="mc-horarios-visual" style="grid-column:span 2">
           <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--texto-muted);margin-bottom:8px">Disponibilidade do dia</div>
           <div id="mc-slots-grid" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+          <input type="hidden" id="mc-horario">
         </div>
 
         <div class="form-group span2">
@@ -2467,9 +2461,10 @@ function renderHojeOperacional(){
           ${cons.map(q=>{ const c=clientes.find(x=>x.id==q.clienteId);
             return `<tr class="checkin-row" data-id="${q.id}">
               <td>
-                <strong>${q.horario}</strong> · ${escapeHTML(c?.nome||'?')}
-                <br><span style="font-size:11px;color:var(--texto-muted)">${escapeHTML((q.procedimentos||[]).join(', '))}${q.status&&q.status!=='agendada'?' · '+q.status:''}</span>
+                <strong>${q.horario}</strong> · <span style="cursor:pointer;text-decoration:underline dotted;color:var(--verde-escuro)" onclick="verProcedimentosAgendados('${q.id}')">${escapeHTML(c?.nome||'?')}</span>
+                <br><span style="font-size:11px;color:var(--texto-muted)">${(q.procedimentosClinica||[]).length?escapeHTML((q.procedimentosClinica||[]).join(' · ')):'<em>Sem procedimentos definidos</em>'}${q.status&&q.status!=='agendada'?' · '+q.status:''}</span>
                 <div class="checkin-acoes-mobile">
+                  <button class="btn-mob" style="background:var(--verde-sage);color:var(--verde-escuro);border-color:var(--verde-sage)" onclick="abrirProcedimentosClinica('${q.id}')">📋 Proc.</button>
                   <button class="btn-mob-realizada" onclick="abrirCheckin('${q.id}')">✓ Realizada</button>
                   <button class="btn-mob" onclick="checkinFaltou('${q.id}')">Faltou</button>
                   <button class="btn-mob" onclick="remarcarConsulta('${q.id}')">Remarcar</button>
@@ -2477,7 +2472,8 @@ function renderHojeOperacional(){
               </td>
               <td class="col-prof">${escapeHTML(q.profissional||'—')}</td>
               <td class="col-acoes" style="white-space:nowrap">
-                <button class="btn-secondary" style="padding:5px 8px" onclick="abrirCheckin('${q.id}')">Realizada</button>
+                <button class="btn-secondary" style="padding:5px 8px;color:var(--verde-escuro);border-color:var(--verde-sage)" onclick="abrirProcedimentosClinica('${q.id}')">📋 Procedimentos</button>
+                <button class="btn-secondary" style="padding:5px 8px;margin-left:4px" onclick="abrirCheckin('${q.id}')">Realizada</button>
                 <button class="btn-secondary" style="padding:5px 8px;margin-left:4px" onclick="checkinFaltou('${q.id}')">Faltou</button>
                 <button class="btn-secondary" style="padding:5px 8px;margin-left:4px" onclick="remarcarConsulta('${q.id}')">Remarcar</button>
               </td>
@@ -2798,8 +2794,7 @@ function abrirModalConsulta(){
   document.getElementById('mc-cliente-selecionado').style.display='none';
   document.getElementById('mc-data').value='';
   document.getElementById('mc-obs').value='';
-  document.getElementById('mc-horarios-visual').style.display='none';
-  document.getElementById('mc-horario').innerHTML='<option value="">Selecione a data primeiro</option>';
+  document.getElementById('mc-horario').value='';
   document.getElementById('mc-overlay').classList.add('visible');
 }
 function fecharMC(){ document.getElementById('mc-overlay').classList.remove('visible'); mcClienteId=null; consultaRemarcandoId=null; }
@@ -2831,12 +2826,12 @@ function limparClienteMC(){ mcClienteId=null; document.getElementById('mc-client
 function atualizarHorariosMC(){
   const data=document.getElementById('mc-data').value; if(!data) return;
   const ocupados=horariosOcupadosNoDia(data);
-  const select=document.getElementById('mc-horario');
-  select.innerHTML='<option value="">Selecione o horário</option>';
+  document.getElementById('mc-horario').value='';
+  const select = { innerHTML: '' }; // select removido
   HORARIOS.forEach(h=>{ const opt=document.createElement('option'); opt.value=h; opt.textContent=h+(ocupados.includes(h)?' — ocupado':''); opt.disabled=ocupados.includes(h); select.appendChild(opt); });
   const slotsGrid=document.getElementById('mc-slots-grid');
   slotsGrid.innerHTML=HORARIOS.map(h=>{ const ocup=ocupados.includes(h); return `<button type="button" class="slot-btn${ocup?' ocupado':''}" data-hora="${h}" onclick="${ocup?'':'selecionarSlot(this)'}" ${ocup?'disabled':''}>${h}</button>`; }).join('');
-  document.getElementById('mc-horarios-visual').style.display='block';
+
   select.onchange=()=>{ document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selecionado')); const chosen=document.querySelector(`.slot-btn[data-hora="${select.value}"]`); if(chosen) chosen.classList.add('selecionado'); };
 }
 function selecionarSlot(btn){ document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selecionado')); btn.classList.add('selecionado'); document.getElementById('mc-horario').value=btn.dataset.hora; }
@@ -2944,6 +2939,64 @@ function salvarProduto(){
   salvarStorage(); fecharProd(); verDetalhe(prodClienteId);
 }
 function quitarProduto(clienteId, prodIdx){ if(!confirm('Confirmar recebimento?')) return; const idx=clientes.findIndex(c=>c.id==clienteId); if(idx===-1) return; clientes[idx].produtos[prodIdx].pendente=false; clientes[idx].produtos[prodIdx].pgto='pix'; salvarStorage(); verDetalhe(clienteId); }
+
+
+// ── PROCEDIMENTOS DA CLÍNICA ────────────────────────────────────
+const PROCS_CLINICA = ['Laser e Led', 'Lavagem', 'Ozônio', 'Microagulhamento', 'Capacete', 'Eletro Corrente', 'Pente de Alta Frequência'];
+let procClinicaConsultaId = null;
+
+function abrirProcedimentosClinica(consultaId) {
+  procClinicaConsultaId = consultaId;
+  const q = consultas.find(x => x.id == consultaId);
+  const sel = q?.procedimentosClinica || [];
+  const c = clientes.find(x => x.id == q?.clienteId);
+
+  document.getElementById('proc-clinica-nome').textContent = c?.nome || '';
+  document.getElementById('proc-clinica-hora').textContent = q?.horario || '';
+
+  const grid = document.getElementById('proc-clinica-grid');
+  grid.innerHTML = PROCS_CLINICA.map(p => {
+    const ativo = sel.includes(p);
+    return `<button type="button" onclick="toggleProcClinica(this,'${p}')" data-proc="${p}" style="padding:14px 12px;border-radius:12px;border:2px solid ${ativo?'var(--verde-escuro)':'var(--border)'};background:${ativo?'var(--verde-escuro)':'#fff'};color:${ativo?'#fff':'var(--texto-secundario)'};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:${ativo?'600':'400'};text-align:center;transition:all .15s">${p}</button>`;
+  }).join('');
+
+  document.getElementById('proc-clinica-overlay').classList.add('visible');
+}
+
+function toggleProcClinica(btn, proc) {
+  const q = consultas.find(x => x.id == procClinicaConsultaId);
+  if (!q) return;
+  if (!q.procedimentosClinica) q.procedimentosClinica = [];
+  const idx = q.procedimentosClinica.indexOf(proc);
+  if (idx === -1) {
+    q.procedimentosClinica.push(proc);
+    btn.style.border = '2px solid var(--verde-escuro)';
+    btn.style.background = 'var(--verde-escuro)';
+    btn.style.color = '#fff';
+    btn.style.fontWeight = '600';
+  } else {
+    q.procedimentosClinica.splice(idx, 1);
+    btn.style.border = '2px solid var(--border)';
+    btn.style.background = '#fff';
+    btn.style.color = 'var(--texto-secundario)';
+    btn.style.fontWeight = '400';
+  }
+}
+
+async function salvarProcedimentosClinica() {
+  await salvarConsultasStorage();
+  document.getElementById('proc-clinica-overlay').classList.remove('visible');
+  renderAll();
+}
+
+function fecharProcClinica() {
+  document.getElementById('proc-clinica-overlay').classList.remove('visible');
+}
+
+function verProcedimentosAgendados(consultaId) {
+  abrirProcedimentosClinica(consultaId);
+}
+
 
 // ── ANAMNESE ────────────────────────────────────────────────────
 let anamneseAvaliacaoId = null;
@@ -3665,6 +3718,33 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
       <button id="anamnese-btn-prev" onclick="anamnesePrev()" class="btn-secondary" style="min-width:100px">← Anterior</button>
       <div style="font-size:12px;color:var(--texto-muted)" id="anamnese-nav-label"></div>
       <button id="anamnese-btn-next" onclick="anamneseNext()" class="btn-primary" style="min-width:100px;background:var(--verde-escuro)">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── MODAL PROCEDIMENTOS CLÍNICA ─────────────────────────────── -->
+<div class="modal-overlay" id="proc-clinica-overlay" onclick="if(event.target===this)fecharProcClinica()">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Procedimentos do dia</div>
+        <div style="font-size:12px;color:var(--texto-muted);margin-top:3px">
+          <span id="proc-clinica-hora"></span> · <span id="proc-clinica-nome"></span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharProcClinica()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--texto-muted);margin-bottom:14px">Selecione os procedimentos que serão realizados nesta sessão:</div>
+      <div id="proc-clinica-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharProcClinica()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarProcedimentosClinica()" style="background:var(--verde-escuro)">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar
+      </button>
     </div>
   </div>
 </div>
