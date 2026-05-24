@@ -1263,6 +1263,23 @@
     color: #5A3A88;
   }
 
+.modal-overlay#anamnese-overlay {
+  padding: 0;
+  align-items: flex-start;
+}
+
+@media (min-width: 769px) {
+  #anamnese-modal {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  #anamnese-body {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+  }
+}
+
 /* ═══════════════════════════════════════════════════
    RESPONSIVIDADE MOBILE
    ═══════════════════════════════════════════════════ */
@@ -1793,6 +1810,7 @@
     <div class="modal-body" id="detail-body"></div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="fecharDetail()">Fechar</button>
+      <button class="btn-secondary" onclick="abrirAnamnese(null,clienteAtivo)" style="border-color:var(--verde-sage);color:var(--verde-escuro)">Anamnese</button>
       <button class="btn-primary" onclick="registrarConsulta(clienteAtivo)">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Registrar Consulta
@@ -2471,6 +2489,7 @@ function renderHojeOperacional(){
       <div class="table-container"><table><thead><tr><th>Avaliações de hoje</th><th>Ações</th></tr></thead><tbody>
         ${avs.map(a=>`<tr><td><strong>${a.horario}</strong> · ${escapeHTML(a.nome)}<br><span style="font-size:11px;color:var(--texto-muted)">${escapeHTML(a.queixa||'Avaliação')} · ${escapeHTML(a.profissional||'—')}</span></td><td>
           <button class="btn-secondary" style="padding:5px 8px" onclick="converterAvaliacao('${a.id}')">Converter</button>
+          <button class="btn-secondary" style="padding:5px 8px;margin-left:4px" onclick="abrirAnamnese('${a.id}',null)">Anamnese</button>
           <button class="btn-secondary" style="padding:5px 8px;margin-left:4px" onclick="editarAvaliacao('${a.id}')">Editar</button>
         </td></tr>`).join('')||'<tr><td colspan="2" style="text-align:center;color:var(--texto-muted);padding:20px">Nenhuma avaliação hoje.</td></tr>'}
       </tbody></table></div>
@@ -2926,6 +2945,455 @@ function salvarProduto(){
 }
 function quitarProduto(clienteId, prodIdx){ if(!confirm('Confirmar recebimento?')) return; const idx=clientes.findIndex(c=>c.id==clienteId); if(idx===-1) return; clientes[idx].produtos[prodIdx].pendente=false; clientes[idx].produtos[prodIdx].pgto='pix'; salvarStorage(); verDetalhe(clienteId); }
 
+// ── ANAMNESE ────────────────────────────────────────────────────
+let anamneseAvaliacaoId = null;
+let anamneseClienteId = null;
+let anamneseSecaoAtual = 0;
+let anamneseDados = {};
+
+const ANAMNESE_SECOES = [
+  {
+    id: 'identificacao',
+    titulo: '👤 Identificação',
+    subtitulo: 'Dados pessoais da paciente',
+    modo: 'cliente', // preenchido pela cliente
+    campos: [
+      { id: 'queixa_principal', label: 'Queixa principal', tipo: 'textarea', placeholder: 'Descreva o principal problema que te trouxe aqui...' },
+      { id: 'inicio_sintoma', label: 'Início do sintoma', tipo: 'text', placeholder: 'Ex: há 6 meses, após parto...' },
+      { id: 'problema_anterior', label: 'Já teve problema semelhante anteriormente?', tipo: 'simnao' },
+      { id: 'problema_anterior_obs', label: 'Se sim, descreva', tipo: 'text', placeholder: 'O que aconteceu...', condicional: { campo: 'problema_anterior', valor: 'sim' } },
+    ]
+  },
+  {
+    id: 'historico_familiar',
+    titulo: '👨‍👩‍👧 Histórico Familiar',
+    subtitulo: 'Antecedentes genéticos e familiares',
+    modo: 'cliente',
+    campos: [
+      { id: 'calvicie_genetica', label: 'Antecedentes genéticos de calvície?', tipo: 'simnao' },
+      { id: 'calvicie_parentesco', label: 'Parentesco', tipo: 'text', placeholder: 'Ex: pai, avó materna...', condicional: { campo: 'calvicie_genetica', valor: 'sim' } },
+      { id: 'historico_doencas', label: 'Histórico de doenças na família', tipo: 'multiplo', opcoes: ['Cardíaco', 'Neurológico', 'Tireóide', 'Hipertensão', 'Alergias', 'Osteoporose', 'Depressão', 'Lactante', 'Alcoolismo', 'Diabete', 'Tabagismo', 'Marca-passo', 'Stress', 'Câncer', 'Pele'] },
+      { id: 'historico_obs', label: 'Observações', tipo: 'text', placeholder: 'Informações adicionais...' },
+    ]
+  },
+  {
+    id: 'historico_fisiologico',
+    titulo: '🏥 Histórico Fisiológico',
+    subtitulo: 'Saúde geral e medicamentos',
+    modo: 'cliente',
+    campos: [
+      { id: 'usa_medicacao', label: 'Faz uso de medicação?', tipo: 'simnao' },
+      { id: 'medicacao_qual', label: 'Qual medicação?', tipo: 'text', placeholder: 'Nome dos medicamentos...', condicional: { campo: 'usa_medicacao', valor: 'sim' } },
+      { id: 'usou_corticoides', label: 'Usou corticóides?', tipo: 'simnao' },
+      { id: 'corticoides_tempo', label: 'Por quanto tempo?', tipo: 'text', condicional: { campo: 'usou_corticoides', valor: 'sim' } },
+      { id: 'quimioterapia', label: 'Quimioterapia ou Radiação?', tipo: 'simnao' },
+      { id: 'quimio_tempo', label: 'Tempo', tipo: 'text', condicional: { campo: 'quimioterapia', valor: 'sim' } },
+      { id: 'infeccao_recente', label: 'Recentemente teve infecção, viroses ou doenças febris?', tipo: 'simnao' },
+      { id: 'alergia_medicamento', label: 'Tem alergia a algum medicamento?', tipo: 'simnao' },
+      { id: 'alergia_qual', label: 'Qual?', tipo: 'text', condicional: { campo: 'alergia_medicamento', valor: 'sim' } },
+      { id: 'intestino', label: 'Como funciona seu intestino?', tipo: 'opcoes', opcoes: ['Normal', 'Constipado', 'Irregular'] },
+      { id: 'ciclo_menstrual', label: 'Ciclo menstrual', tipo: 'opcoes', opcoes: ['Normal', 'Irregular', 'Menopausa'] },
+      { id: 'anticoncepcional', label: 'Usa anticoncepcional?', tipo: 'simnao' },
+      { id: 'anticoncepcional_interrupcao', label: 'Com interrupções frequentes?', tipo: 'simnao', condicional: { campo: 'anticoncepcional', valor: 'sim' } },
+      { id: 'alteracao_hormonal', label: 'Alteração hormonal?', tipo: 'simnao' },
+      { id: 'ovario_policistico', label: 'Ovário policístico?', tipo: 'simnao' },
+      { id: 'pressao', label: 'Pressão arterial', tipo: 'opcoes', opcoes: ['Normal', 'Hipotensão', 'Hipertensão'] },
+      { id: 'tireoide', label: 'Tireóide', tipo: 'opcoes', opcoes: ['Normal', 'Hipotireoidismo', 'Hipertireoidismo'] },
+      { id: 'cirurgia_recente', label: 'Fez procedimento cirúrgico recentemente?', tipo: 'simnao' },
+      { id: 'cirurgia_qual', label: 'Qual e há quanto tempo?', tipo: 'text', condicional: { campo: 'cirurgia_recente', valor: 'sim' } },
+      { id: 'marca_passo', label: 'Tem marca-passo?', tipo: 'simnao' },
+    ]
+  },
+  {
+    id: 'habitos',
+    titulo: '🌿 Hábitos & Estilo de Vida',
+    subtitulo: 'Alimentação, rotina e saúde',
+    modo: 'cliente',
+    campos: [
+      { id: 'atividade_fisica', label: 'Pratica atividade física?', tipo: 'simnao' },
+      { id: 'alimentacao', label: 'Como classifica sua alimentação?', tipo: 'opcoes', opcoes: ['Muito boa', 'Boa', 'Regular', 'Ruim'] },
+      { id: 'faz_regime', label: 'Costuma fazer regime?', tipo: 'simnao' },
+      { id: 'restricao_alimentar', label: 'Tem alguma restrição alimentar?', tipo: 'simnao' },
+      { id: 'restricao_qual', label: 'Qual restrição?', tipo: 'text', condicional: { campo: 'restricao_alimentar', valor: 'sim' } },
+      { id: 'liquido_copos', label: 'Quantos copos de água por dia?', tipo: 'opcoes', opcoes: ['Menos de 4', '4 a 6', '6 a 8', 'Mais de 8'] },
+      { id: 'refeicoes_dia', label: 'Quantas refeições diárias?', tipo: 'opcoes', opcoes: ['1 a 2', '3', '4 a 5', 'Mais de 5'] },
+      { id: 'alimentacao_itens', label: 'Consome regularmente', tipo: 'multiplo', opcoes: ['Verduras', 'Frutas', 'Legumes', 'Carne', 'Suplemento alimentar'] },
+      { id: 'anabolizante', label: 'Uso de anabolizantes?', tipo: 'simnao' },
+      { id: 'fuma', label: 'Fuma?', tipo: 'simnao' },
+      { id: 'bebida_alcoolica', label: 'Faz uso de bebida alcoólica?', tipo: 'simnao' },
+      { id: 'terapia_capilar_anterior', label: 'Já fez alguma terapia capilar?', tipo: 'simnao' },
+      { id: 'terapia_qual', label: 'Qual?', tipo: 'text', condicional: { campo: 'terapia_capilar_anterior', valor: 'sim' } },
+      { id: 'gravida', label: 'No momento está grávida ou com suspeita?', tipo: 'simnao' },
+      { id: 'tem_filhos', label: 'Tem filhos?', tipo: 'simnao' },
+      { id: 'filhos_qtd', label: 'Quantos?', tipo: 'text', condicional: { campo: 'tem_filhos', valor: 'sim' } },
+      { id: 'metais_corpo', label: 'Presença de metais no corpo?', tipo: 'simnao' },
+      { id: 'metais_tipo', label: 'Qual tipo?', tipo: 'text', condicional: { campo: 'metais_corpo', valor: 'sim' } },
+      { id: 'estresse', label: 'Passou por período de estresse elevado?', tipo: 'simnao' },
+      { id: 'estresse_quando', label: 'Há quanto tempo?', tipo: 'text', condicional: { campo: 'estresse', valor: 'sim' } },
+      { id: 'observacoes_gerais', label: 'Gostaria de relatar mais alguma coisa?', tipo: 'textarea', placeholder: 'Espaço livre para comentários...' },
+    ]
+  },
+  {
+    id: 'cuidados_capilares',
+    titulo: '🧴 Cuidados Capilares',
+    subtitulo: 'Rotina e produtos utilizados',
+    modo: 'cliente',
+    campos: [
+      { id: 'freq_lavagem', label: 'Qual a frequência de lavagem do cabelo?', tipo: 'opcoes', opcoes: ['1x por semana', '2x por semana', '3x por semana', 'Todos os dias'] },
+      { id: 'faz_escova', label: 'Faz escova no cabelo?', tipo: 'simnao' },
+      { id: 'escova_freq', label: 'Com qual frequência?', tipo: 'text', condicional: { campo: 'faz_escova', valor: 'sim' } },
+      { id: 'prurido', label: 'Prurido (coceira) no couro cabeludo?', tipo: 'simnao' },
+      { id: 'dor_couro', label: 'Dor no couro cabeludo?', tipo: 'simnao' },
+      { id: 'alteracao_cor', label: 'Alguma alteração na cor do cabelo?', tipo: 'simnao' },
+      { id: 'alteracao_cor_qual', label: 'Qual alteração?', tipo: 'text', condicional: { campo: 'alteracao_cor', valor: 'sim' } },
+      { id: 'shampoo', label: 'Shampoo utilizado', tipo: 'text', placeholder: 'Marca e nome do produto...' },
+      { id: 'condicionador', label: 'Condicionador utilizado', tipo: 'text', placeholder: 'Marca e nome do produto...' },
+      { id: 'trata_cabelo', label: 'Costuma tratar o cabelo?', tipo: 'simnao' },
+      { id: 'tratamento_atual', label: 'Qual tratamento?', tipo: 'text', condicional: { campo: 'trata_cabelo', valor: 'sim' } },
+      { id: 'quimica', label: 'Usa química?', tipo: 'multiplo', opcoes: ['Coloração', 'Relaxamento', 'Escova progressiva', 'Mechas', 'Tonalizante', 'Hennê', 'Hena', 'Virgem (sem química)'] },
+      { id: 'quimica_freq', label: 'Frequência de uso da química', tipo: 'text', placeholder: 'Ex: a cada 3 meses...' },
+    ]
+  },
+  {
+    id: 'avaliacao_fio',
+    titulo: '🔬 Avaliação do Fio',
+    subtitulo: 'Preenchido pela terapeuta capilar',
+    modo: 'profissional',
+    campos: [
+      { id: 'espessura_fio', label: 'Espessura do fio', tipo: 'opcoes', opcoes: ['Fino', 'Médio', 'Grosso'] },
+      { id: 'tipo_cabelo', label: 'Tipo de cabelo', tipo: 'opcoes', opcoes: ['Liso', 'Ondulado', 'Crespo'] },
+      { id: 'qualidade_fio', label: 'Qualidade do fio', tipo: 'opcoes', opcoes: ['Saudável', 'Desidratado', 'Desestruturado'] },
+      { id: 'caracteristica', label: 'Característica', tipo: 'opcoes', opcoes: ['Normal', 'Seco', 'Oleoso', 'Misto'] },
+      { id: 'porosidade', label: 'Porosidade', tipo: 'opcoes', opcoes: ['Normal', 'Poroso', 'Sensibilizado'] },
+      { id: 'resistencia', label: 'Resistência', tipo: 'opcoes', opcoes: ['Normal', 'Média', 'Fragilizado'] },
+      { id: 'elasticidade', label: 'Elasticidade', tipo: 'opcoes', opcoes: ['Boa', 'Pouca', 'Nenhuma'] },
+      { id: 'densidade', label: 'Densidade', tipo: 'opcoes', opcoes: ['Denso', 'Médio', 'Escasso'] },
+      { id: 'queda_fio', label: 'Queda de fio', tipo: 'simnao' },
+      { id: 'afinamento_fio', label: 'Afinamento do fio', tipo: 'simnao' },
+      { id: 'quebra_fio', label: 'Quebra do fio', tipo: 'simnao' },
+      { id: 'tricoglifos', label: 'Tricoglifos', tipo: 'simnao' },
+      { id: 'tricoptilose', label: 'Tricoptilose', tipo: 'simnao' },
+      { id: 'triconodose', label: 'Triconodose', tipo: 'simnao' },
+      { id: 'teste_tracao', label: 'Teste de tração suave', tipo: 'text', placeholder: 'Resultado...' },
+      { id: 'qtd_fios', label: 'Quantidade de fios', tipo: 'text', placeholder: 'Ex: 5 fios' },
+      { id: 'com_mucina', label: 'Com mucina?', tipo: 'simnao' },
+      { id: 'avaliacao_risca', label: 'Avaliação da risca do cabelo — Grau atual', tipo: 'opcoes', opcoes: ['Inicial', '2', '3', '4', '5', 'Avançado'] },
+      { id: 'teste_palpacao', label: 'Teste de Palpação', tipo: 'opcoes', opcoes: ['Pregueamento', 'Não pregueamento'] },
+      { id: 'avaliacao_visual', label: 'Avaliação visual', tipo: 'textarea', placeholder: 'Descreva o que foi observado...' },
+    ]
+  },
+  {
+    id: 'haste_capilar',
+    titulo: '🧬 Avaliação da Haste Capilar',
+    subtitulo: 'Preenchido pela terapeuta capilar',
+    modo: 'profissional',
+    campos: [
+      { id: 'tricoptilose_h', label: 'Tricoptilose (pontas duplas)', tipo: 'simnao' },
+      { id: 'triconodose_h', label: 'Triconodose (nódulos no fio)', tipo: 'simnao' },
+      { id: 'piedra_branca', label: 'Piedra Branca (micoses superficiais)', tipo: 'simnao' },
+      { id: 'piedra_preta', label: 'Piedra Preta (nódulos escuros)', tipo: 'simnao' },
+      { id: 'pili_torti', label: 'Pili Torti (haste achatada)', tipo: 'simnao' },
+      { id: 'ttd', label: 'Tricotiodistrofia TTD (grãos de areia)', tipo: 'simnao' },
+      { id: 'bubble_hair', label: 'Bubble Hair (dismorfia distal)', tipo: 'simnao' },
+      { id: 'oleosidade', label: 'Oleosidade', tipo: 'opcoes', opcoes: ['Normal', 'Oleosa', 'Muito oleosa'] },
+      { id: 'seborreia', label: 'Seborreia — Grau', tipo: 'opcoes', opcoes: ['Sem seborreia', 'Leve', 'Moderada', 'Intensa'] },
+      { id: 'ptiriase', label: 'Ptiriase (caspa)', tipo: 'opcoes', opcoes: ['Sem caspa', 'Seca', 'Oleosa', 'Localizada', 'Generalizada'] },
+    ]
+  },
+  {
+    id: 'tricoscopio',
+    titulo: '🔭 Avaliação Tricoscópio',
+    subtitulo: 'Preenchido pela terapeuta capilar',
+    modo: 'profissional',
+    campos: [
+      { id: 'camada_cornea', label: 'Camada córnea (elevada, excesso de oleosidade)', tipo: 'simnao_obs' },
+      { id: 'osteoquenogeno', label: 'Osteoquenógeno (pontos amarelados — osteo vazio)', tipo: 'simnao_obs' },
+      { id: 'ponto_fibrotico', label: 'Ponto fibrótico (pontos brancos/pretos — cicatriz)', tipo: 'simnao_obs' },
+      { id: 'descamacao', label: 'Descamação perifolicular', tipo: 'opcoes', opcoes: ['Não', 'Branca', 'Prata'] },
+      { id: 'fios_velos', label: 'Fios velos (curtos e despigmentados)', tipo: 'simnao_obs' },
+      { id: 'fios_intermediarios', label: 'Fios intermediários (grossos)', tipo: 'simnao_obs' },
+      { id: 'hiperpigmentacao', label: 'Hiperpigmentação perifolicular', tipo: 'simnao_obs' },
+      { id: 'vasos_arboriformes', label: 'Vasos arboriformes (região occipital)', tipo: 'simnao_obs' },
+      { id: 'vasos_puntiformes', label: 'Vasos puntiformes (Psoríase, Dermatite seborreica)', tipo: 'simnao_obs' },
+      { id: 'eritema', label: 'Eritema (vermelhidão)', tipo: 'simnao_obs' },
+      { id: 'edema', label: 'Edema (inchaço)', tipo: 'simnao_obs' },
+      { id: 'papulas', label: 'Pápulas (erupções vermelhas)', tipo: 'simnao_obs' },
+      { id: 'pustula', label: 'Pústula (bolinhas com pus)', tipo: 'simnao_obs' },
+      { id: 'pigmentacao', label: 'Pigmentação (favo de mel)', tipo: 'simnao_obs' },
+      { id: 'descamacao_peripilar', label: 'Descamação peripilar / Epiderme perifolicular', tipo: 'simnao' },
+      { id: 'inflamacao_interfolicular', label: 'Inflamação interfolicular', tipo: 'simnao' },
+      { id: 'pelos_cadavericos', label: 'Pelos cadavéricos (pontos pretos — Areata)', tipo: 'simnao' },
+      { id: 'corceira_vertex', label: 'Corceira na região Vertex (Lúpus ou Liqui plano pilar)', tipo: 'simnao' },
+    ]
+  },
+  {
+    id: 'classificacao_regiao',
+    titulo: '🗺️ Classificação por Região',
+    subtitulo: 'Padrão de queda — preenchido pela terapeuta',
+    modo: 'profissional',
+    campos: [
+      { id: 'sexo_classificacao', label: 'Sexo da paciente', tipo: 'opcoes', opcoes: ['Feminino', 'Masculino'] },
+      { id: 'classificacao_ludwig', label: 'Padrão feminino (Ludwig)', tipo: 'classificacao_ludwig' },
+      { id: 'classificacao_norwood', label: 'Padrão masculino (Hamilton-Norwood)', tipo: 'classificacao_norwood' },
+      { id: 'observacoes_finais', label: 'Observações finais da avaliação', tipo: 'textarea', placeholder: 'Conclusões, recomendações de tratamento...' },
+    ]
+  }
+];
+
+function abrirAnamnese(avaliacaoId, clienteId) {
+  anamneseAvaliacaoId = avaliacaoId || null;
+  anamneseClienteId = clienteId || null;
+  anamneseSecaoAtual = 0;
+
+  // Carregar dados existentes
+  if (avaliacaoId) {
+    const a = avaliacoes.find(x => x.id == avaliacaoId);
+    anamneseDados = a?.anamnese ? { ...a.anamnese } : {};
+    document.getElementById('anamnese-subtitulo').textContent = `${a?.nome || ''} · Avaliação`;
+  } else if (clienteId) {
+    const c = clientes.find(x => x.id == clienteId);
+    anamneseDados = c?.anamnese ? { ...c.anamnese } : {};
+    document.getElementById('anamnese-subtitulo').textContent = `${c?.nome || ''} · Ficha da cliente`;
+  }
+
+  renderAnamneseSteps();
+  renderAnamneseSecao();
+  document.getElementById('anamnese-overlay').classList.add('visible');
+}
+
+function fecharAnamnese() {
+  document.getElementById('anamnese-overlay').classList.remove('visible');
+}
+
+function renderAnamneseSteps() {
+  const stepsEl = document.getElementById('anamnese-steps');
+  stepsEl.innerHTML = ANAMNESE_SECOES.map((s, i) => `
+    <div onclick="irParaSecao(${i})" title="${s.titulo}" style="width:28px;height:6px;border-radius:3px;cursor:pointer;transition:all .2s;background:${i === anamneseSecaoAtual ? 'var(--verde-escuro)' : i < anamneseSecaoAtual ? 'var(--verde-sage)' : 'var(--border)'}"></div>
+  `).join('');
+
+  const pct = Math.round(((anamneseSecaoAtual) / ANAMNESE_SECOES.length) * 100);
+  document.getElementById('anamnese-progress-bar').style.width = pct + '%';
+  document.getElementById('anamnese-step-label').textContent = `Seção ${anamneseSecaoAtual + 1} de ${ANAMNESE_SECOES.length}`;
+}
+
+function irParaSecao(i) {
+  salvarAnamneseSecaoAtual();
+  anamneseSecaoAtual = i;
+  renderAnamneseSecao();
+}
+
+function renderAnamneseSecao() {
+  const secao = ANAMNESE_SECOES[anamneseSecaoAtual];
+  const isProfissional = secao.modo === 'profissional';
+
+  let html = `
+    <div style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--verde-escuro)">${secao.titulo}</div>
+        ${isProfissional ? `<span style="font-size:10px;padding:3px 10px;background:#E8F0D8;color:var(--verde-escuro);border-radius:20px;font-weight:500">Terapeuta</span>` : `<span style="font-size:10px;padding:3px 10px;background:#E6F1FB;color:#185FA5;border-radius:20px;font-weight:500">Paciente</span>`}
+      </div>
+      <div style="font-size:13px;color:var(--texto-muted)">${secao.subtitulo}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+  `;
+
+  secao.campos.forEach(campo => {
+    const val = anamneseDados[campo.id] || '';
+    const visivel = !campo.condicional || anamneseDados[campo.condicional.campo] === campo.condicional.valor;
+    const display = visivel ? '' : 'display:none;';
+
+    html += `<div class="anamnese-campo" id="campo-wrap-${campo.id}" style="${display}">`;
+    html += `<label style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--texto-muted);display:block;margin-bottom:8px">${campo.label}</label>`;
+
+    if (campo.tipo === 'simnao') {
+      html += `<div style="display:flex;gap:10px">
+        <button type="button" onclick="setAnamnese('${campo.id}','sim',this)" class="anamnese-btn ${val==='sim'?'anamnese-btn-sel':''}" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid ${val==='sim'?'var(--verde-escuro)':'var(--border)'};background:${val==='sim'?'var(--verde-escuro)':'#fff'};color:${val==='sim'?'#fff':'var(--texto-secundario)'};font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">Sim</button>
+        <button type="button" onclick="setAnamnese('${campo.id}','nao',this)" class="anamnese-btn ${val==='nao'?'anamnese-btn-sel-neg':''}" style="flex:1;padding:12px;border-radius:10px;border:1.5px solid ${val==='nao'?'#C0392B':'var(--border)'};background:${val==='nao'?'#FCEBEB':'#fff'};color:${val==='nao'?'#C0392B':'var(--texto-secundario)'};font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">Não</button>
+      </div>`;
+    } else if (campo.tipo === 'simnao_obs') {
+      html += `<div style="display:flex;gap:10px;margin-bottom:8px">
+        <button type="button" onclick="setAnamnese('${campo.id}','sim',this)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid ${val==='sim'||val?.startsWith?.('sim')?'var(--verde-escuro)':'var(--border)'};background:${val==='sim'||val?.startsWith?.('sim')?'var(--verde-escuro)':'#fff'};color:${val==='sim'||val?.startsWith?.('sim')?'#fff':'var(--texto-secundario)'};font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Sim</button>
+        <button type="button" onclick="setAnamnese('${campo.id}','nao',this)" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid ${val==='nao'?'#C0392B':'var(--border)'};background:${val==='nao'?'#FCEBEB':'#fff'};color:${val==='nao'?'#C0392B':'var(--texto-secundario)'};font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif">Não</button>
+      </div>
+      <input type="text" id="anamnese-obs-${campo.id}" placeholder="Observações..." value="${anamneseDados[campo.id+'_obs']||''}" onchange="anamneseDados['${campo.id}_obs']=this.value" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;box-sizing:border-box;background:#FAFAF8">`;
+    } else if (campo.tipo === 'opcoes') {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+      campo.opcoes.forEach(op => {
+        const sel = val === op;
+        html += `<button type="button" onclick="setAnamnese('${campo.id}','${op}',this)" style="padding:10px 16px;border-radius:20px;border:1.5px solid ${sel?'var(--verde-escuro)':'var(--border)'};background:${sel?'var(--verde-escuro)':'#fff'};color:${sel?'#fff':'var(--texto-secundario)'};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">${op}</button>`;
+      });
+      html += `</div>`;
+    } else if (campo.tipo === 'multiplo') {
+      const vals = Array.isArray(val) ? val : (val ? [val] : []);
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+      campo.opcoes.forEach(op => {
+        const sel = vals.includes(op);
+        html += `<button type="button" onclick="toggleAnamneseMultiplo('${campo.id}','${op}',this)" style="padding:10px 16px;border-radius:20px;border:1.5px solid ${sel?'var(--verde-escuro)':'var(--border)'};background:${sel?'var(--verde-escuro)':'#fff'};color:${sel?'#fff':'var(--texto-secundario)'};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s">${op}</button>`;
+      });
+      html += `</div>`;
+    } else if (campo.tipo === 'textarea') {
+      html += `<textarea id="anamnese-field-${campo.id}" onchange="anamneseDados['${campo.id}']=this.value" placeholder="${campo.placeholder||''}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;min-height:80px;resize:vertical;box-sizing:border-box;background:#FAFAF8">${val}</textarea>`;
+    } else if (campo.tipo === 'text') {
+      html += `<input type="text" id="anamnese-field-${campo.id}" onchange="anamneseDados['${campo.id}']=this.value" placeholder="${campo.placeholder||''}" value="${val}" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;box-sizing:border-box;background:#FAFAF8">`;
+    } else if (campo.tipo === 'classificacao_ludwig') {
+      const ludwigOps = ['I-1','I-2','I-3','I-4','II-1','II-2','III','Avançado','Frontal'];
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+      ludwigOps.forEach(op => {
+        const sel = val === op;
+        html += `<button type="button" onclick="setAnamnese('${campo.id}','${op}',this)" style="padding:10px 18px;border-radius:10px;border:1.5px solid ${sel?'#9B72D0':'var(--border)'};background:${sel?'#EAE0F8':'#fff'};color:${sel?'#5A3A88':'var(--texto-secundario)'};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:${sel?'600':'400'}">${op}</button>`;
+      });
+      html += `</div>`;
+    } else if (campo.tipo === 'classificacao_norwood') {
+      const norwoodOps = ['I','II','IIa','III','IIIa','III Vertex','IV','IVa','V','Va','VI','VII'];
+      html += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+      norwoodOps.forEach(op => {
+        const sel = val === op;
+        html += `<button type="button" onclick="setAnamnese('${campo.id}','${op}',this)" style="padding:10px 18px;border-radius:10px;border:1.5px solid ${sel?'#9B72D0':'var(--border)'};background:${sel?'#EAE0F8':'#fff'};color:${sel?'#5A3A88':'var(--texto-secundario)'};font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:${sel?'600':'400'}">${op}</button>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div>`; // campo
+  });
+
+  html += `</div>`; // campos container
+
+  // Botão salvar na última seção
+  if (anamneseSecaoAtual === ANAMNESE_SECOES.length - 1) {
+    html += `<div style="margin-top:24px;padding:16px;background:#E8F0D8;border-radius:12px;text-align:center">
+      <div style="font-size:14px;color:var(--verde-escuro);font-weight:500;margin-bottom:12px">✓ Anamnese completa! Salvar agora?</div>
+      <button onclick="salvarAnamnese()" style="padding:12px 32px;background:var(--verde-escuro);color:#fff;border:none;border-radius:10px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer">Salvar Anamnese</button>
+    </div>`;
+  }
+
+  document.getElementById('anamnese-body').innerHTML = html;
+  document.getElementById('anamnese-body').scrollTop = 0;
+
+  // Botões de nav
+  document.getElementById('anamnese-btn-prev').style.visibility = anamneseSecaoAtual === 0 ? 'hidden' : 'visible';
+  const isLast = anamneseSecaoAtual === ANAMNESE_SECOES.length - 1;
+  document.getElementById('anamnese-btn-next').textContent = isLast ? 'Finalizar ✓' : 'Próximo →';
+  document.getElementById('anamnese-btn-next').style.background = isLast ? '#2C7A4B' : 'var(--verde-escuro)';
+  document.getElementById('anamnese-nav-label').textContent = ANAMNESE_SECOES[anamneseSecaoAtual].titulo;
+
+  renderAnamneseSteps();
+
+  // Aplicar lógica condicional
+  setTimeout(() => aplicarCondicionaisAnamnese(), 50);
+}
+
+function setAnamnese(id, val, btn) {
+  anamneseDados[id] = val;
+  // Atualiza visual dos botões irmãos
+  const parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => {
+    const isSimBtn = b.textContent.trim() === 'Sim' || (!['Sim','Não'].includes(b.textContent.trim()));
+    b.style.border = '1.5px solid var(--border)';
+    b.style.background = '#fff';
+    b.style.color = 'var(--texto-secundario)';
+    b.style.fontWeight = '400';
+  });
+  if (val === 'nao') {
+    btn.style.border = '1.5px solid #C0392B';
+    btn.style.background = '#FCEBEB';
+    btn.style.color = '#C0392B';
+  } else if (val === 'sim') {
+    btn.style.border = '1.5px solid var(--verde-escuro)';
+    btn.style.background = 'var(--verde-escuro)';
+    btn.style.color = '#fff';
+  } else {
+    btn.style.border = '1.5px solid var(--verde-escuro)';
+    btn.style.background = 'var(--verde-escuro)';
+    btn.style.color = '#fff';
+    btn.style.fontWeight = '600';
+  }
+  aplicarCondicionaisAnamnese();
+}
+
+function toggleAnamneseMultiplo(id, val, btn) {
+  let arr = Array.isArray(anamneseDados[id]) ? [...anamneseDados[id]] : [];
+  if (arr.includes(val)) {
+    arr = arr.filter(x => x !== val);
+    btn.style.border = '1.5px solid var(--border)';
+    btn.style.background = '#fff';
+    btn.style.color = 'var(--texto-secundario)';
+  } else {
+    arr.push(val);
+    btn.style.border = '1.5px solid var(--verde-escuro)';
+    btn.style.background = 'var(--verde-escuro)';
+    btn.style.color = '#fff';
+  }
+  anamneseDados[id] = arr;
+}
+
+function aplicarCondicionaisAnamnese() {
+  const secao = ANAMNESE_SECOES[anamneseSecaoAtual];
+  secao.campos.forEach(campo => {
+    if (!campo.condicional) return;
+    const wrap = document.getElementById(`campo-wrap-${campo.id}`);
+    if (!wrap) return;
+    const valDep = anamneseDados[campo.condicional.campo];
+    wrap.style.display = valDep === campo.condicional.valor ? '' : 'none';
+  });
+}
+
+function salvarAnamneseSecaoAtual() {
+  // Salva campos de texto/textarea que ainda não foram capturados
+  const secao = ANAMNESE_SECOES[anamneseSecaoAtual];
+  secao.campos.forEach(campo => {
+    if (['text','textarea'].includes(campo.tipo)) {
+      const el = document.getElementById(`anamnese-field-${campo.id}`);
+      if (el) anamneseDados[campo.id] = el.value;
+    }
+    if (campo.tipo === 'simnao_obs') {
+      const el = document.getElementById(`anamnese-obs-${campo.id}`);
+      if (el) anamneseDados[campo.id + '_obs'] = el.value;
+    }
+  });
+}
+
+function anamneseNext() {
+  salvarAnamneseSecaoAtual();
+  if (anamneseSecaoAtual < ANAMNESE_SECOES.length - 1) {
+    anamneseSecaoAtual++;
+    renderAnamneseSecao();
+  } else {
+    salvarAnamnese();
+  }
+}
+
+function anamnesePrev() {
+  salvarAnamneseSecaoAtual();
+  if (anamneseSecaoAtual > 0) {
+    anamneseSecaoAtual--;
+    renderAnamneseSecao();
+  }
+}
+
+async function salvarAnamnese() {
+  salvarAnamneseSecaoAtual();
+  anamneseDados.atualizadoEm = new Date().toISOString();
+
+  if (anamneseAvaliacaoId) {
+    const idx = avaliacoes.findIndex(x => x.id == anamneseAvaliacaoId);
+    if (idx !== -1) {
+      avaliacoes[idx].anamnese = anamneseDados;
+      await salvarAvaliacoesStorage();
+    }
+  } else if (anamneseClienteId) {
+    const idx = clientes.findIndex(x => x.id == anamneseClienteId);
+    if (idx !== -1) {
+      clientes[idx].anamnese = anamneseDados;
+      await salvarStorage();
+    }
+  }
+
+  fecharAnamnese();
+  renderAll();
+  alert('Anamnese salva com sucesso!');
+}
+
+
 // ── INSTALAÇÃO DE UI DINÂMICA ─────────────────────────────────
 function instalarUI(){
   // Página Hoje na navegação
@@ -3161,6 +3629,42 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Salvar Produto
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ANAMNESE ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="anamnese-overlay" onclick="if(event.target===this)fecharAnamnese()" style="z-index:1100;align-items:flex-start;padding:0">
+  <div id="anamnese-modal" style="width:100%;max-width:700px;margin:0 auto;background:var(--branco-creme);min-height:100vh;display:flex;flex-direction:column;position:relative">
+
+    <!-- Header fixo -->
+    <div style="position:sticky;top:0;z-index:10;background:var(--verde-escuro);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#F5F0E8;letter-spacing:.04em">Ficha de Anamnese</div>
+        <div style="font-size:11px;color:rgba(245,240,232,0.6);margin-top:2px" id="anamnese-subtitulo">Luciana do Vale · Clínica Capilar</div>
+      </div>
+      <button onclick="fecharAnamnese()" style="background:rgba(255,255,255,0.12);border:none;color:#F5F0E8;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+
+    <!-- Barra de progresso -->
+    <div style="background:rgba(44,62,45,0.1);height:4px">
+      <div id="anamnese-progress-bar" style="height:100%;background:var(--verde-escuro);transition:width .4s;width:0%"></div>
+    </div>
+
+    <!-- Indicador de seção -->
+    <div style="padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;gap:6px" id="anamnese-steps"></div>
+      <div style="font-size:12px;color:var(--texto-muted)" id="anamnese-step-label">Seção 1 de 9</div>
+    </div>
+
+    <!-- Corpo das seções -->
+    <div id="anamnese-body" style="flex:1;overflow-y:auto;padding:24px 20px 100px"></div>
+
+    <!-- Footer fixo com navegação -->
+    <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <button id="anamnese-btn-prev" onclick="anamnesePrev()" class="btn-secondary" style="min-width:100px">← Anterior</button>
+      <div style="font-size:12px;color:var(--texto-muted)" id="anamnese-nav-label"></div>
+      <button id="anamnese-btn-next" onclick="anamneseNext()" class="btn-primary" style="min-width:100px;background:var(--verde-escuro)">Próximo →</button>
     </div>
   </div>
 </div>
