@@ -6,25 +6,25 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Luciana do Vale · Clínica Capilar</title>
+<title>Arahub · Gestão de Clínicas</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bege-claro: #F5F0E8;
-    --bege-medio: #E8DDD0;
-    --bege-escuro: #D4C4B0;
-    --marrom-claro: #8A9E80;
-    --marrom-medio: #5C7052;
-    --marrom-escuro: #3A4F34;
-    --verde-sage: #A0836A;
-    --verde-escuro: #7A5C45;
-    --verde-claro: #E0D0C0;
-    --branco-creme: #FAF7F2;
-    --texto-principal: #3A2E24;
-    --texto-secundario: #7A6858;
-    --texto-muted: #A89880;
-    --border: #DDD0C0;
-    --sombra: rgba(74, 56, 40, 0.08);
+    --bege-claro: #F5F6F8;
+    --bege-medio: #E8EAF0;
+    --bege-escuro: #D0D4E0;
+    --marrom-claro: #7A9A5A;
+    --marrom-medio: #6BA832;
+    --marrom-escuro: #2D5A2D;
+    --verde-sage: #6BA832;
+    --verde-escuro: #2D5A2D;
+    --verde-claro: #EEF7E6;
+    --branco-creme: #FFFFFF;
+    --texto-principal: #1A2A1A;
+    --texto-secundario: #3A5A3A;
+    --texto-muted: #7A90A0;
+    --border: #E0E4EC;
+    --sombra: rgba(44, 90, 44, 0.08);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,7 +42,8 @@
     position: fixed;
     left: 0; top: 0; bottom: 0;
     width: 240px;
-    background: var(--marrom-escuro);
+    background: #FFFFFF;
+    border-right: 1px solid #E0E4EC;
     display: flex;
     flex-direction: column;
     z-index: 100;
@@ -50,30 +51,17 @@
   }
 
   .sidebar-logo {
-    padding: 32px 24px 28px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid #E0E4EC;
   }
 
-  .sidebar-logo .leaf {
-    font-size: 22px;
-    margin-bottom: 10px;
-    display: block;
-    color: var(--verde-sage);
-  }
-
-  .sidebar-logo h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
-    font-weight: 400;
-    color: var(--bege-claro);
-    line-height: 1.3;
-    letter-spacing: 0.02em;
-  }
+  .sidebar-logo .leaf { display: none; }
+  .sidebar-logo h1 { display: none; }
 
   .sidebar-logo p {
-    font-size: 11px;
-    color: var(--marrom-claro);
-    letter-spacing: 0.12em;
+    font-size: 10px;
+    color: #6BA832;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     margin-top: 4px;
   }
@@ -94,7 +82,7 @@
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
-    color: rgba(245, 240, 232, 0.55);
+    color: #3A5A3A;
     font-size: 13.5px;
     font-weight: 400;
     border: none;
@@ -106,29 +94,30 @@
   .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
 
   .nav-item:hover {
-    color: var(--bege-claro);
-    background: rgba(255,255,255,0.06);
+    color: #2D5A2D;
+    background: #EEF7E6;
   }
 
   .nav-item.active {
-    background: rgba(138, 158, 128, 0.25);
-    color: var(--verde-sage);
+    background: #D6EDBE;
+    color: #2D5A2D;
+    font-weight: 500;
   }
 
   .nav-section-label {
     font-size: 10px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: rgba(245,240,232,0.25);
+    color: #9AACB0;
     padding: 16px 16px 6px;
     margin-top: 8px;
   }
 
   .sidebar-footer {
     padding: 20px 16px;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid #E0E4EC;
     font-size: 11.5px;
-    color: rgba(245,240,232,0.3);
+    color: #9AACB0;
     text-align: center;
     line-height: 1.5;
   }
@@ -969,9 +958,9 @@
   .slot-btn:hover:not(.ocupado) { border-color: var(--marrom-medio); background: var(--bege-claro); }
 
   .slot-btn.selecionado {
-    background: var(--marrom-medio);
+    background: #6BA832;
     color: white;
-    border-color: var(--marrom-medio);
+    border-color: #6BA832;
   }
 
   .slot-btn.ocupado {
@@ -1461,9 +1450,9 @@
   }
 
   .btn-mob-realizada {
-    background: var(--marrom-medio);
+    background: #6BA832;
     color: white;
-    border-color: var(--marrom-medio);
+    border-color: #6BA832;
   }
 
   .col-prof, .col-acoes { display: none; }
@@ -1536,12 +1525,20 @@
 <!-- SIDEBAR -->
 <nav class="sidebar">
   <div class="sidebar-logo">
-    <span class="leaf">✦</span>
-    <h1>Luciana do Vale</h1>
-    <p>Clínica Capilar</p>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="1500 6000 26500 10200" width="148" height="57" style="display:block">
+    <path fill="#6BA832" fill-rule="nonzero" d="M25898.72 12702.51c1027.15,0 1801.48,-766.42 1801.48,-2133.32l0 -63.21c0,-1366.93 -790.12,-2117.53 -1801.48,-2117.53 -608.4,0 -1090.38,347.64 -1319.5,742.71l0 -2520.49 -1145.68 0 0 6004.93 1145.68 0 0 -655.8c213.32,426.66 679.49,742.71 1319.5,742.71z"/>
+    <path fill="#6BA832" fill-rule="nonzero" d="M19972.79 12702.51c679.51,0 1098.29,-316.05 1311.61,-734.81l0 647.9 1137.79 0 0 -4132.33 -1137.79 0 0 2425.67c0,608.39 -379.25,908.63 -861.24,908.63 -489.87,0 -719.01,-268.64 -719.01,-829.63l0 -2504.67 -1137.77 0 0 2662.7c0,1082.47 600.49,1556.54 1406.41,1556.54z"/>
+    <path fill="#6BA832" fill-rule="nonzero" d="M13738.74 12615.6l1145.68 0 0 -2386.17c0,-608.39 371.35,-908.65 861.22,-908.65 505.69,0 726.92,268.64 726.92,829.65l0 2465.17 1145.67 0 0 -2631.11c0,-1106.17 -576.78,-1596.04 -1390.61,-1596.04 -687.4,0 -1137.77,339.75 -1343.2,750.6l0 -2528.38 -1145.68 0 0 6004.93z"/>
+    <path fill="#6BA832" d="M7370.94 12879.33c2218.55,0 4123.01,-1344.81 4942.65,-3263.73l-405.89 0 0 -497.78c-237.05,331.85 -600.51,584.69 -1248.4,584.69 -750.63,0 -1382.73,-363.46 -1382.73,-1232.58 0,-963.95 884.95,-1327.41 2149.15,-1327.41l466.16 0 0 -165.93c0,-489.87 -150.12,-758.52 -671.6,-758.52 -450.37,0 -655.8,229.14 -703.21,584.7l-1082.47 0c71.11,-979.77 845.44,-1414.32 1856.79,-1414.32 441.25,0 826.85,78.21 1121.37,259.56 -756.45,-2050.75 -2728.37,-3513.08 -5041.82,-3513.08 -2384.91,0 -4406.85,1554.07 -5108.4,3704.77 336.16,-307.82 838.95,-451.25 1419.97,-451.25 1011.36,0 1730.37,410.87 1730.37,1532.84l0 2694.31 -1114.07 0 0 -497.78c-237.04,331.85 -600.5,584.69 -1248.4,584.69 -224.63,0 -438.67,-32.56 -628.31,-101.47 816.22,1926.68 2724.69,3278.29 4948.84,3278.29zm1502.67 -6392.61c-845.42,-7.91 -1335.29,268.64 -1335.29,1058.76l0 2070.12 -1145.68 0 0 -4132.33 1145.68 0 0 790.1c260.73,-553.07 663.69,-845.42 1335.29,-853.33l0 1066.68z"/>
+    <path fill="#6BA832" d="M3390.17 11904.5c505.66,0 892.83,-276.55 892.83,-734.83l0 -347.64 -442.46 0c-663.72,0 -1050.86,142.21 -1050.86,584.69 0,300.23 181.73,497.78 600.49,497.78z"/>
+    <path fill="#6BA832" d="M3816.83 10142.52l466.17 0 0 -165.93c0,-489.87 -150.12,-758.52 -671.6,-758.52 -450.37,0 -655.81,229.14 -703.22,584.7l-863.67 0c-30.19,230.51 -45.77,465.62 -45.77,704.36 0,44.24 0.54,88.35 1.59,132.34 368.07,-351.34 1016.32,-496.95 1816.5,-496.95z"/>
+    <path fill="#6BA832" d="M11449.42 10822.03c-663.71,0 -1050.86,142.21 -1050.86,584.69 0,300.23 181.73,497.78 600.49,497.78 505.67,0 892.83,-276.55 892.83,-734.83l0 -347.64 -442.46 0z"/>
+  </svg>
+    <p>Gestão de Clínicas</p>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section-label">Principal</div>
+    <button class="nav-item" data-nav-hoje onclick="showPage('hoje')"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Hoje</button>
     <button class="nav-item active" onclick="showPage('dashboard')">
       <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Painel
@@ -1555,6 +1552,7 @@
       Agenda
     </button>
     <div class="nav-section-label">Gestão</div>
+    <button class="nav-item" data-nav-financeiro onclick="showPage('financeiro')"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6"/></svg>Financeiro</button>
     <button class="nav-item" onclick="showPage('calendario')">
       <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
       Calendário
@@ -1565,11 +1563,11 @@
     </button>
   </div>
   <div class="sidebar-footer" style="display:flex; flex-direction:column; gap:8px;">
-      <button onclick="fazerLogout()" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:rgba(245,240,232,0.6); font-size:12px; font-family:'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em;">
+      <button onclick="fazerLogout()" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:#EEF7E6; border:1px solid #D6EDBE; border-radius:8px; color:#2D5A2D; font-size:12px; font-family:'DM Sans',sans-serif; cursor:pointer; letter-spacing:.02em;">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         Sair
       </button>
-      <div style="font-size:10px;color:rgba(245,240,232,0.3);text-align:center;padding-top:4px;">Sistema exclusivo para uso interno</div>
+      <div style="font-size:10px;color:rgba(245,240,232,0.3);text-align:center;padding-top:4px;">powered by Arahub</div>
 </nav>
 
 <!-- MAIN -->
@@ -3450,15 +3448,7 @@ async function salvarAnamnese() {
 // ── INSTALAÇÃO DE UI DINÂMICA ─────────────────────────────────
 function instalarUI(){
   // Página Hoje na navegação
-  if(!document.querySelector('[data-nav-hoje]')){
-    const primeiroNavItem=document.querySelector('.nav-item');
-    primeiroNavItem?.insertAdjacentHTML('beforebegin',`<button class="nav-item" data-nav-hoje onclick="showPage('hoje')"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>Hoje</button>`);
-  }
-  // Página Financeiro
-  if(!document.querySelector('[data-nav-financeiro]')){
-    const gestao=[...document.querySelectorAll('.nav-section-label')].find(el=>el.textContent.trim()==='Gestão');
-    gestao?.insertAdjacentHTML('afterend',`<button class="nav-item" data-nav-financeiro onclick="showPage('financeiro')"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7H14a3.5 3.5 0 010 7H6"/></svg>Financeiro</button>`);
-  }
+  // Hoje e Financeiro já estão no HTML estático — apenas garante as páginas de conteúdo
   // Páginas de conteúdo
   const content=document.querySelector('.content');
   if(content){
@@ -3751,11 +3741,21 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
 
 </div><!-- end app-root -->
 <!-- ── TELA DE LOGIN ─────────────────────────────────────── -->
-<div id="login-screen" style="display:none; position:fixed; inset:0; z-index:9999; background:#F5F0E8; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;">
+<div id="login-screen" style="display:none; position:fixed; inset:0; z-index:9999; background:#F5F6F8; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;">
   <div style="width:100%; max-width:380px; padding:0 24px;">
     <div style="text-align:center; margin-bottom:40px;">
-      <div style="font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300; color:#2C3E2D; letter-spacing:.04em; margin-bottom:6px;">Luciana do Vale</div>
-      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#8A9E80;">Clínica Capilar</div>
+<div style="display:flex;justify-content:center;margin-bottom:6px">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="1500 6000 26500 10200" width="170" height="65">
+          <path fill="#6BA832" fill-rule="nonzero" d="M25898.72 12702.51c1027.15,0 1801.48,-766.42 1801.48,-2133.32l0 -63.21c0,-1366.93 -790.12,-2117.53 -1801.48,-2117.53 -608.4,0 -1090.38,347.64 -1319.5,742.71l0 -2520.49 -1145.68 0 0 6004.93 1145.68 0 0 -655.8c213.32,426.66 679.49,742.71 1319.5,742.71z"/>
+          <path fill="#6BA832" fill-rule="nonzero" d="M19972.79 12702.51c679.51,0 1098.29,-316.05 1311.61,-734.81l0 647.9 1137.79 0 0 -4132.33 -1137.79 0 0 2425.67c0,608.39 -379.25,908.63 -861.24,908.63 -489.87,0 -719.01,-268.64 -719.01,-829.63l0 -2504.67 -1137.77 0 0 2662.7c0,1082.47 600.49,1556.54 1406.41,1556.54z"/>
+          <path fill="#6BA832" fill-rule="nonzero" d="M13738.74 12615.6l1145.68 0 0 -2386.17c0,-608.39 371.35,-908.65 861.22,-908.65 505.69,0 726.92,268.64 726.92,829.65l0 2465.17 1145.67 0 0 -2631.11c0,-1106.17 -576.78,-1596.04 -1390.61,-1596.04 -687.4,0 -1137.77,339.75 -1343.2,750.6l0 -2528.38 -1145.68 0 0 6004.93z"/>
+          <path fill="#6BA832" d="M7370.94 12879.33c2218.55,0 4123.01,-1344.81 4942.65,-3263.73l-405.89 0 0 -497.78c-237.05,331.85 -600.51,584.69 -1248.4,584.69 -750.63,0 -1382.73,-363.46 -1382.73,-1232.58 0,-963.95 884.95,-1327.41 2149.15,-1327.41l466.16 0 0 -165.93c0,-489.87 -150.12,-758.52 -671.6,-758.52 -450.37,0 -655.8,229.14 -703.21,584.7l-1082.47 0c71.11,-979.77 845.44,-1414.32 1856.79,-1414.32 441.25,0 826.85,78.21 1121.37,259.56 -756.45,-2050.75 -2728.37,-3513.08 -5041.82,-3513.08 -2384.91,0 -4406.85,1554.07 -5108.4,3704.77 336.16,-307.82 838.95,-451.25 1419.97,-451.25 1011.36,0 1730.37,410.87 1730.37,1532.84l0 2694.31 -1114.07 0 0 -497.78c-237.04,331.85 -600.5,584.69 -1248.4,584.69 -224.63,0 -438.67,-32.56 -628.31,-101.47 816.22,1926.68 2724.69,3278.29 4948.84,3278.29zm1502.67 -6392.61c-845.42,-7.91 -1335.29,268.64 -1335.29,1058.76l0 2070.12 -1145.68 0 0 -4132.33 1145.68 0 0 790.1c260.73,-553.07 663.69,-845.42 1335.29,-853.33l0 1066.68z"/>
+          <path fill="#6BA832" d="M3390.17 11904.5c505.66,0 892.83,-276.55 892.83,-734.83l0 -347.64 -442.46 0c-663.72,0 -1050.86,142.21 -1050.86,584.69 0,300.23 181.73,497.78 600.49,497.78z"/>
+          <path fill="#6BA832" d="M3816.83 10142.52l466.17 0 0 -165.93c0,-489.87 -150.12,-758.52 -671.6,-758.52 -450.37,0 -655.81,229.14 -703.22,584.7l-863.67 0c-30.19,230.51 -45.77,465.62 -45.77,704.36 0,44.24 0.54,88.35 1.59,132.34 368.07,-351.34 1016.32,-496.95 1816.5,-496.95z"/>
+          <path fill="#6BA832" d="M11449.42 10822.03c-663.71,0 -1050.86,142.21 -1050.86,584.69 0,300.23 181.73,497.78 600.49,497.78 505.67,0 892.83,-276.55 892.83,-734.83l0 -347.64 -442.46 0z"/>
+        </svg>
+      </div>
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:#6BA832;">Gestão de Clínicas</div>
     </div>
     <div style="background:#fff; border-radius:16px; padding:32px; box-shadow:0 4px 24px rgba(0,0,0,0.06);">
       <div style="font-size:14px; font-weight:500; color:#2C3E2D; margin-bottom:20px;">Acesso ao sistema</div>
@@ -3768,7 +3768,7 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
         <input id="login-senha" type="password" placeholder="••••••••" style="width:100%; padding:11px 14px; border:1px solid #D4C4B0; border-radius:10px; font-size:14px; font-family:'DM Sans',sans-serif; color:#2C2C2C; background:#FAFAF8; outline:none; box-sizing:border-box;">
       </div>
       <div id="login-erro" style="font-size:12px; color:#C0392B; margin-bottom:12px; min-height:16px;"></div>
-      <button onclick="fazerLogin()" style="width:100%; padding:13px; background:#2C3E2D; color:#F5F0E8; border:none; border-radius:10px; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:500; cursor:pointer; letter-spacing:.02em;">Entrar</button>
+      <button onclick="fazerLogin()" style="width:100%; padding:13px; background:#6BA832; color:#fff; border:none; border-radius:10px; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:500; cursor:pointer; letter-spacing:.02em;">Entrar</button>
     </div>
   </div>
 </div>
