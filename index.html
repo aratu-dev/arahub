@@ -1927,7 +1927,7 @@
           <input type="date" id="mc-data" onchange="atualizarHorariosMC()">
         </div>
 
-        <div id="mc-horarios-visual" style="grid-column:span 2">
+        <div id="mc-horarios-visual" style="grid-column:1/-1;margin-top:4px">
           <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--texto-muted);margin-bottom:8px">Disponibilidade do dia</div>
           <div id="mc-slots-grid" style="display:flex;flex-wrap:wrap;gap:7px"></div>
           <input type="hidden" id="mc-horario">
@@ -2822,15 +2822,13 @@ function selecionarClienteMC(id){
 function limparClienteMC(){ mcClienteId=null; document.getElementById('mc-cliente-selecionado').style.display='none'; document.getElementById('mc-busca').value=''; }
 
 function atualizarHorariosMC(){
-  const data=document.getElementById('mc-data').value; if(!data) return;
-  const ocupados=horariosOcupadosNoDia(data);
-  document.getElementById('mc-horario').value='';
-  const select = { innerHTML: '' }; // select removido
-  HORARIOS.forEach(h=>{ const opt=document.createElement('option'); opt.value=h; opt.textContent=h+(ocupados.includes(h)?' — ocupado':''); opt.disabled=ocupados.includes(h); select.appendChild(opt); });
+  const data=document.getElementById('mc-data').value;
   const slotsGrid=document.getElementById('mc-slots-grid');
+  if(!slotsGrid) return;
+  if(!data){ slotsGrid.innerHTML='<span style="font-size:12px;color:var(--texto-muted)">Selecione uma data acima</span>'; return; }
+  document.getElementById('mc-horario').value='';
+  const ocupados=horariosOcupadosNoDia(data);
   slotsGrid.innerHTML=HORARIOS.map(h=>{ const ocup=ocupados.includes(h); return `<button type="button" class="slot-btn${ocup?' ocupado':''}" data-hora="${h}" onclick="${ocup?'':'selecionarSlot(this)'}" ${ocup?'disabled':''}>${h}</button>`; }).join('');
-
-  select.onchange=()=>{ document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selecionado')); const chosen=document.querySelector(`.slot-btn[data-hora="${select.value}"]`); if(chosen) chosen.classList.add('selecionado'); };
 }
 function selecionarSlot(btn){ document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selecionado')); btn.classList.add('selecionado'); document.getElementById('mc-horario').value=btn.dataset.hora; }
 
