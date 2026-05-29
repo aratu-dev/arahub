@@ -3099,46 +3099,6 @@ function registrarEntradaEstoque(id) {
   salvarProdutosEstoque().then(() => renderProdutosEstoque());
 }
 
-// -- Modal Repor Estoque --
-function abrirModalReporEstoque(){
-  if(produtosEstoque.length===0){ alert('Nenhum produto cadastrado ainda.'); return; }
-  var sel = document.getElementById('repor-produto-sel');
-  sel.innerHTML = '<option value="">Selecione o produto...</option>' +
-    produtosEstoque.map(function(p){ return '<option value="'+p.id+'">'+escapeHTML(p.nome)+' ('+p.quantidade+' un.)</option>'; }).join('');
-  document.getElementById('repor-qtd').value = '';
-  document.getElementById('repor-obs').value = '';
-  document.getElementById('repor-estoque-atual').style.display = 'none';
-  document.getElementById('repor-overlay').classList.add('visible');
-}
-function fecharModalRepor(){
-  document.getElementById('repor-overlay').classList.remove('visible');
-}
-function atualizarInfoRepor(){
-  var id  = document.getElementById('repor-produto-sel').value;
-  var box = document.getElementById('repor-estoque-atual');
-  if(!id){ box.style.display='none'; return; }
-  var p = produtosEstoque.find(function(x){ return x.id==id; });
-  if(!p){ box.style.display='none'; return; }
-  var cor = p.quantidade===0?'#8B2020': p.quantidade<=(p.estoqueMinimo||3)?'#7A4A10':'#2D5A2D';
-  box.style.display='block';
-  box.innerHTML='<span style="color:'+cor+';font-weight:500">Estoque atual: '+p.quantidade+' unidades</span> &nbsp;&middot;&nbsp; m&iacute;nimo: '+(p.estoqueMinimo||3)+' un.';
-}
-async function confirmarReposicao(){
-  var id  = document.getElementById('repor-produto-sel').value;
-  var qtd = parseInt(document.getElementById('repor-qtd').value);
-  if(!id){ alert('Selecione um produto.'); return; }
-  if(!qtd||qtd<=0){ alert('Informe uma quantidade v&aacute;lida.'); return; }
-  var idx = produtosEstoque.findIndex(function(p){ return p.id==id; });
-  if(idx===-1) return;
-  if(!produtosEstoque[idx].historico) produtosEstoque[idx].historico=[];
-  produtosEstoque[idx].quantidade += qtd;
-  produtosEstoque[idx].historico.push({tipo:'entrada', qtd:qtd, data:hojeISO(), obs:document.getElementById('repor-obs').value});
-  await salvarProdutosEstoque();
-  fecharModalRepor();
-  renderProdutosEstoque();
-}
-
-
 // -- Repor Estoque --
 function abrirModalReporEstoque(){
   if(produtosEstoque.length===0){ alert('Nenhum produto cadastrado ainda.'); return; }
@@ -4021,60 +3981,4 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
 </div>
 
 </body>
-</html><!-- MODAL CADASTRAR/EDITAR PRODUTO -->
-<div class="modal-overlay" id="pe-overlay" onclick="if(event.target===this)fecharPeModal()">
-  <div class="modal" style="width:460px">
-    <div class="modal-header">
-      <div class="modal-title" id="pe-modal-title">Cadastrar Produto</div>
-      <button class="modal-close" onclick="fecharPeModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="form-group span2"><label>Nome do produto *</label><input type="text" id="pe-nome" placeholder="Ex: Shampoo Antiqueda 300ml"></div>
-        <div class="form-group span2"><label>Categoria</label><input type="text" id="pe-categoria" placeholder="Ex: Shampoo, Ampola, Leave-in..."></div>
-        <div class="form-group"><label>Preço de venda (R$) *</label><input type="number" id="pe-preco-venda" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="form-group"><label>Quantidade inicial *</label><input type="number" id="pe-quantidade" min="0" placeholder="0"></div>
-        <div class="form-group"><label>Estoque mínimo (alerta)</label><input type="number" id="pe-minimo" min="0" placeholder="3"></div>
-        <div class="form-group"><label>Preço de custo (R$)</label><input type="number" id="pe-preco-custo" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="form-group span2"><label>Observações</label><input type="text" id="pe-obs" placeholder="Marca, fornecedor, validade..."></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="fecharPeModal()">Cancelar</button>
-      <button class="btn-primary" onclick="salvarProdutoEstoque()">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        Salvar Produto
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL REPOR ESTOQUE -->
-<div class="modal-overlay" id="repor-overlay" onclick="if(event.target===this)fecharModalRepor()">
-  <div class="modal" style="width:420px">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">Repor Estoque</div>
-        <div style="font-size:12px;color:var(--texto-muted);margin-top:3px">Adicione unidades a um produto existente</div>
-      </div>
-      <button class="modal-close" onclick="fecharModalRepor()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid full">
-        <div class="form-group"><label>Produto *</label>
-          <select id="repor-produto-sel" onchange="atualizarInfoRepor()"><option value="">Selecione o produto...</option></select>
-        </div>
-        <div id="repor-estoque-atual" style="display:none;background:var(--bege-claro);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--texto-secundario);margin-top:4px"></div>
-        <div class="form-group"><label>Quantidade a adicionar *</label><input type="number" id="repor-qtd" min="1" placeholder="Ex: 10"></div>
-        <div class="form-group"><label>Observação (opcional)</label><input type="text" id="repor-obs" placeholder="Ex: NF 1234, fornecedor..."></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="fecharModalRepor()">Cancelar</button>
-      <button class="btn-primary" onclick="confirmarReposicao()" style="background:var(--verde-escuro)">
-        ↺ Confirmar Reposição
-      </button>
-    </div>
-  </div>
-</div>
-
+</html>
