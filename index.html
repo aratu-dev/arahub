@@ -3022,14 +3022,17 @@ function renderProdutosEstoque(){
   if(alertas.length>0){
     var chips = alertas.map(function(p){
       var vazio = p.quantidade===0;
-      return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:500;background:'+(vazio?'#FAD5D5':'#FDECD0')+';color:'+(vazio?'#8B2020':'#7A4A10')+'">'+(vazio?'&#x1F534;':'&#x1F7E1;')+' '+escapeHTML(p.nome)+' &middot; '+p.quantidade+' un.</span>';
+      var bg  = vazio ? '#FAD5D5' : '#FDECD0';
+      var cor = vazio ? '#8B2020' : '#7A4A10';
+      var ico = vazio ? '🔴' : '🟡';
+      return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:500;background:'+bg+';color:'+cor+'">'+ico+' '+escapeHTML(p.nome)+' · '+p.quantidade+' un.</span>';
     }).join('');
-    alertasHTML = '<div style="background:#FFF8EC;border:1px solid #F5C97A;border-left:4px solid #E8A020;border-radius:12px;padding:14px 18px;margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">&#x26A0;&#xFE0F;</span><div style="font-size:13px;font-weight:600;color:#7A4A10">'+alertas.length+' produto'+(alertas.length>1?'s':'')+' precisa'+(alertas.length>1?'m':'')+' de aten&ccedil;&atilde;o</div></div><div style="display:flex;flex-wrap:wrap;gap:8px">'+chips+'</div></div>';
+    alertasHTML = '<div style="background:#FFF8EC;border:1px solid #F5C97A;border-left:4px solid #E8A020;border-radius:12px;padding:14px 18px;margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">⚠️</span><div style="font-size:13px;font-weight:600;color:#7A4A10">'+alertas.length+' produto'+(alertas.length>1?'s':'')+' precisa'+(alertas.length>1?'m':'')+' de atenção</div></div><div style="display:flex;flex-wrap:wrap;gap:8px">'+chips+'</div></div>';
   }
 
   var produtosHTML = '';
   if(produtosEstoque.length===0){
-    produtosHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;text-align:center;padding:56px 20px;color:var(--texto-muted)"><div style="font-size:40px;margin-bottom:12px">&#x1F4E6;</div><div style="font-size:15px;font-weight:500;margin-bottom:6px">Nenhum produto cadastrado ainda</div><div style="font-size:13px">Clique em &ldquo;Cadastrar Produto&rdquo; para come&ccedil;ar</div></div>';
+    produtosHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;text-align:center;padding:56px 20px;color:var(--texto-muted)"><div style="font-size:40px;margin-bottom:12px">📦</div><div style="font-size:15px;font-weight:500;margin-bottom:6px">Nenhum produto cadastrado ainda</div><div style="font-size:13px">Clique em Cadastrar Produto para começar</div></div>';
   } else {
     var rows = produtosEstoque.map(function(p){
       var min = p.estoqueMinimo||3;
@@ -3037,38 +3040,41 @@ function renderProdutosEstoque(){
       var pct = Math.min((p.quantidade/max)*100,100);
       var vazio = p.quantidade===0;
       var baixo = !vazio && p.quantidade<=min;
-      var barColor  = vazio?'#E07070':baixo?'#E8A020':'#6BA832';
-      var statusBg  = vazio?'#FAD5D5':baixo?'#FFF0D0':'#D6EDBE';
-      var statusCor = vazio?'#8B2020':baixo?'#7A4A10':'#2D5A2D';
-      var statusTxt = vazio?'&#x1F534; Sem estoque':baixo?'&#x1F7E1; Estoque baixo':'&#x1F7E2; OK';
+      var barColor  = vazio ? '#E07070' : baixo ? '#E8A020' : '#6BA832';
+      var statusBg  = vazio ? '#FAD5D5' : baixo ? '#FFF0D0' : '#D6EDBE';
+      var statusCor = vazio ? '#8B2020' : baixo ? '#7A4A10' : '#2D5A2D';
+      var statusTxt = vazio ? '🔴 Sem estoque' : baixo ? '🟡 Estoque baixo' : '🟢 OK';
       return '<tr>'+
         '<td><div style="font-weight:500;font-size:14px">'+escapeHTML(p.nome)+'</div>'+(p.categoria?'<div style="font-size:11px;color:var(--texto-muted);margin-top:2px">'+escapeHTML(p.categoria)+'</div>':'')+'</td>'+
         '<td style="font-weight:500">'+brl(p.precoVenda||0)+'</td>'+
         '<td><span style="font-size:20px;font-weight:400;line-height:1">'+p.quantidade+'</span><span style="font-size:11px;color:var(--texto-muted);margin-left:3px">un.</span></td>'+
-        '<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:var(--bege-escuro);border-radius:99px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:99px"></div></div><span style="font-size:11px;color:var(--texto-muted);white-space:nowrap">m&iacute;n. '+min+'</span></div></td>'+
+        '<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:var(--bege-escuro);border-radius:99px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:99px"></div></div><span style="font-size:11px;color:var(--texto-muted);white-space:nowrap">mín. '+min+'</span></div></td>'+
         '<td><span style="font-size:11.5px;padding:4px 10px;border-radius:20px;background:'+statusBg+';color:'+statusCor+';font-weight:500;white-space:nowrap">'+statusTxt+'</span></td>'+
-        '<td style="white-space:nowrap"><button class="btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px" onclick="editarProdutoEstoque(\''+p.id+'\')">Editar</button><button class="btn-secondary" style="padding:4px 10px;font-size:12px;color:#8B2020;border-color:#FAD5D5" onclick="excluirProdutoEstoque(\''+p.id+'\')">Excluir</button></td>'+
-        '</tr>';
+        '<td style="white-space:nowrap">'+
+          '<button class="btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px" onclick="editarProdutoEstoque(\''+p.id+'\')">Editar</button>'+
+          '<button class="btn-secondary" style="padding:4px 10px;font-size:12px;color:#8B2020;border-color:#FAD5D5" onclick="excluirProdutoEstoque(\''+p.id+'\')">Excluir</button>'+
+        '</td>'+
+      '</tr>';
     }).join('');
-    produtosHTML = '<div class="table-container"><table><thead><tr><th>Produto</th><th>Pre&ccedil;o de venda</th><th>Estoque</th><th style="min-width:180px">N&iacute;vel</th><th>Status</th><th>A&ccedil;&otilde;es</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    produtosHTML = '<div class="table-container"><table><thead><tr><th>Produto</th><th>Preço</th><th>Estoque</th><th style="min-width:160px">Nível</th><th>Status</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
 
   var html =
     '<div class="content">'+
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">'+
-        '<div class="stat-card verde"><div class="stat-label">Produtos cadastrados</div><div class="stat-value">'+totalItens+'</div><div class="stat-desc">'+totalUnids+' unidades no total</div></div>'+
-        '<div class="stat-card marrom"><div class="stat-label">Estoque baixo</div><div class="stat-value">'+estoqueBaixo.length+'</div><div class="stat-desc">'+(estoqueBaixo.length>0?'precisam de reposi&ccedil;&atilde;o':'tudo em ordem')+'</div></div>'+
-        '<div class="stat-card '+(semEstoque.length>0?'sage':'escuro')+'"><div class="stat-label">Sem estoque</div><div class="stat-value">'+semEstoque.length+'</div><div class="stat-desc">'+(semEstoque.length>0?'produtos zerados':'nenhum zerado')+'</div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">'+
+      '<div class="stat-card verde"><div class="stat-label">Produtos cadastrados</div><div class="stat-value">'+totalItens+'</div><div class="stat-desc">'+totalUnids+' unidades no total</div></div>'+
+      '<div class="stat-card marrom"><div class="stat-label">Estoque baixo</div><div class="stat-value">'+estoqueBaixo.length+'</div><div class="stat-desc">'+(estoqueBaixo.length>0?'precisam de reposição':'tudo em ordem')+'</div></div>'+
+      '<div class="stat-card '+(semEstoque.length>0?'sage':'escuro')+'"><div class="stat-label">Sem estoque</div><div class="stat-value">'+semEstoque.length+'</div><div class="stat-desc">'+(semEstoque.length>0?'produtos zerados':'nenhum zerado')+'</div></div>'+
+    '</div>'+
+    alertasHTML+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'+
+      '<div style="font-size:16px;font-weight:500;color:var(--texto-principal)">Lista de produtos</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<button class="btn-secondary" onclick="abrirModalReporEstoque()" style="display:flex;align-items:center;gap:6px">↺ Repor Estoque</button>'+
+        '<button class="btn-primary" onclick="abrirModalProdutoEstoque()" style="display:flex;align-items:center;gap:6px">+ Cadastrar Produto</button>'+
       '</div>'+
-      alertasHTML+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'+
-        '<div style="font-size:16px;font-weight:500;color:var(--texto-principal)">Lista de produtos</div>'+
-        '<div style="display:flex;gap:10px">'+
-          '<button class="btn-secondary" onclick="abrirModalReporEstoque()" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d=\"M1 4v6h6\"/><path d=\"M23 20v-6h-6\"/><path d=\"M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15\"/></svg> Repor Estoque</button>'+
-          '<button class="btn-primary" onclick="abrirModalProdutoEstoque()" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/></svg> Cadastrar Produto</button>'+
-        '</div>'+
-      '</div>'+
-      produtosHTML+
+    '</div>'+
+    produtosHTML+
     '</div>';
 
   document.getElementById('page-produtos_estoque').innerHTML = html;
@@ -3122,6 +3128,46 @@ async function confirmarReposicao(){
   var qtd = parseInt(document.getElementById('repor-qtd').value);
   if(!id){ alert('Selecione um produto.'); return; }
   if(!qtd||qtd<=0){ alert('Informe uma quantidade v&aacute;lida.'); return; }
+  var idx = produtosEstoque.findIndex(function(p){ return p.id==id; });
+  if(idx===-1) return;
+  if(!produtosEstoque[idx].historico) produtosEstoque[idx].historico=[];
+  produtosEstoque[idx].quantidade += qtd;
+  produtosEstoque[idx].historico.push({tipo:'entrada', qtd:qtd, data:hojeISO(), obs:document.getElementById('repor-obs').value});
+  await salvarProdutosEstoque();
+  fecharModalRepor();
+  renderProdutosEstoque();
+}
+
+
+// -- Repor Estoque --
+function abrirModalReporEstoque(){
+  if(produtosEstoque.length===0){ alert('Nenhum produto cadastrado ainda.'); return; }
+  var sel = document.getElementById('repor-produto-sel');
+  sel.innerHTML = '<option value="">Selecione o produto...</option>' +
+    produtosEstoque.map(function(p){ return '<option value="'+p.id+'">'+escapeHTML(p.nome)+' ('+p.quantidade+' un.)</option>'; }).join('');
+  document.getElementById('repor-qtd').value = '';
+  document.getElementById('repor-obs').value = '';
+  document.getElementById('repor-estoque-atual').style.display = 'none';
+  document.getElementById('repor-overlay').classList.add('visible');
+}
+function fecharModalRepor(){
+  document.getElementById('repor-overlay').classList.remove('visible');
+}
+function atualizarInfoRepor(){
+  var id  = document.getElementById('repor-produto-sel').value;
+  var box = document.getElementById('repor-estoque-atual');
+  if(!id){ box.style.display='none'; return; }
+  var p = produtosEstoque.find(function(x){ return x.id==id; });
+  if(!p){ box.style.display='none'; return; }
+  var cor = p.quantidade===0?'#8B2020': p.quantidade<=(p.estoqueMinimo||3)?'#7A4A10':'#2D5A2D';
+  box.style.display='block';
+  box.innerHTML='<span style="color:'+cor+';font-weight:500">Estoque atual: '+p.quantidade+' unidades</span> · mínimo: '+(p.estoqueMinimo||3)+' un.';
+}
+async function confirmarReposicao(){
+  var id  = document.getElementById('repor-produto-sel').value;
+  var qtd = parseInt(document.getElementById('repor-qtd').value);
+  if(!id){ alert('Selecione um produto.'); return; }
+  if(!qtd||qtd<=0){ alert('Informe uma quantidade válida.'); return; }
   var idx = produtosEstoque.findIndex(function(p){ return p.id==id; });
   if(idx===-1) return;
   if(!produtosEstoque[idx].historico) produtosEstoque[idx].historico=[];
@@ -3669,7 +3715,7 @@ document.getElementById('login-senha')?.addEventListener('keydown', e => {
 
 </script>
 
-<div id="page-produtos_estoque" class="page" style="display:none"></div>
+
 
 <!-- MODAL CHECK-IN (substitui prompt()) -->
 <div class="modal-overlay" id="checkin-overlay" onclick="if(event.target===this)fecharCheckin()">
@@ -3947,6 +3993,7 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
     </div>
   </div>
 </div>
+<div id="page-produtos_estoque" class="page"></div>
 </div><!-- end app-root -->
 <!-- ── TELA DE LOGIN ─────────────────────────────────────── -->
 <div id="login-screen" style="display:none; position:fixed; inset:0; z-index:9999; background:#F5F6F8; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;">
@@ -3974,4 +4021,60 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
 </div>
 
 </body>
-</html>
+</html><!-- MODAL CADASTRAR/EDITAR PRODUTO -->
+<div class="modal-overlay" id="pe-overlay" onclick="if(event.target===this)fecharPeModal()">
+  <div class="modal" style="width:460px">
+    <div class="modal-header">
+      <div class="modal-title" id="pe-modal-title">Cadastrar Produto</div>
+      <button class="modal-close" onclick="fecharPeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span2"><label>Nome do produto *</label><input type="text" id="pe-nome" placeholder="Ex: Shampoo Antiqueda 300ml"></div>
+        <div class="form-group span2"><label>Categoria</label><input type="text" id="pe-categoria" placeholder="Ex: Shampoo, Ampola, Leave-in..."></div>
+        <div class="form-group"><label>Preço de venda (R$) *</label><input type="number" id="pe-preco-venda" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="form-group"><label>Quantidade inicial *</label><input type="number" id="pe-quantidade" min="0" placeholder="0"></div>
+        <div class="form-group"><label>Estoque mínimo (alerta)</label><input type="number" id="pe-minimo" min="0" placeholder="3"></div>
+        <div class="form-group"><label>Preço de custo (R$)</label><input type="number" id="pe-preco-custo" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="form-group span2"><label>Observações</label><input type="text" id="pe-obs" placeholder="Marca, fornecedor, validade..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharPeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarProdutoEstoque()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Produto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPOR ESTOQUE -->
+<div class="modal-overlay" id="repor-overlay" onclick="if(event.target===this)fecharModalRepor()">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Repor Estoque</div>
+        <div style="font-size:12px;color:var(--texto-muted);margin-top:3px">Adicione unidades a um produto existente</div>
+      </div>
+      <button class="modal-close" onclick="fecharModalRepor()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid full">
+        <div class="form-group"><label>Produto *</label>
+          <select id="repor-produto-sel" onchange="atualizarInfoRepor()"><option value="">Selecione o produto...</option></select>
+        </div>
+        <div id="repor-estoque-atual" style="display:none;background:var(--bege-claro);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--texto-secundario);margin-top:4px"></div>
+        <div class="form-group"><label>Quantidade a adicionar *</label><input type="number" id="repor-qtd" min="1" placeholder="Ex: 10"></div>
+        <div class="form-group"><label>Observação (opcional)</label><input type="text" id="repor-obs" placeholder="Ex: NF 1234, fornecedor..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharModalRepor()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarReposicao()" style="background:var(--verde-escuro)">
+        ↺ Confirmar Reposição
+      </button>
+    </div>
+  </div>
+</div>
+
