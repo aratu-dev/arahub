@@ -2228,7 +2228,7 @@ function showPage(p){
   document.querySelectorAll('.nav-item').forEach(el=>{
     if(el.getAttribute('onclick')?.includes(p)) el.classList.add('active');
   });
-  const titles={hoje:'Hoje', dashboard:'Painel', clientes:'Clientes', agenda:'Agenda', calendario:'Calendário', vagas:'Consultas & Vagas', financeiro:'Financeiro'};
+  const titles={hoje:'Hoje', dashboard:'Painel', clientes:'Clientes', agenda:'Agenda', calendario:'Calendário', vagas:'Consultas & Vagas', financeiro:'Financeiro', produtos_estoque:'Produtos'};
   document.getElementById('page-title').textContent = titles[p]||p;
   const sw = document.getElementById('search-wrap');
   if(sw) sw.style.display = p==='clientes'?'flex':'none';
@@ -2249,6 +2249,7 @@ function renderAll(){
   renderAlertas();
   popularFiltroTratamento();
   if(paginaAtual==='financeiro') renderFinanceiro();
+  if(paginaAtual==='produtos_estoque') renderProdutosEstoque();
 }
 
 // STATS
