@@ -1687,6 +1687,9 @@
       <div class="vagas-section" id="vagas-render"></div>
     </div>
 
+    <!-- PRODUTOS -->
+    <div id="page-produtos_estoque" class="page"></div>
+
   </div>
 </div>
 
@@ -3060,7 +3063,6 @@ function renderProdutosEstoque(){
   }
 
   var html =
-    '<div class="content">'+
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">'+
       '<div class="stat-card verde"><div class="stat-label">Produtos cadastrados</div><div class="stat-value">'+totalItens+'</div><div class="stat-desc">'+totalUnids+' unidades no total</div></div>'+
       '<div class="stat-card marrom"><div class="stat-label">Estoque baixo</div><div class="stat-value">'+estoqueBaixo.length+'</div><div class="stat-desc">'+(estoqueBaixo.length>0?'precisam de reposição':'tudo em ordem')+'</div></div>'+
@@ -3074,8 +3076,7 @@ function renderProdutosEstoque(){
         '<button class="btn-primary" onclick="abrirModalProdutoEstoque()" style="display:flex;align-items:center;gap:6px">+ Cadastrar Produto</button>'+
       '</div>'+
     '</div>'+
-    produtosHTML+
-    '</div>';
+    produtosHTML;
 
   document.getElementById('page-produtos_estoque').innerHTML = html;
 }
@@ -4003,7 +4004,6 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
     </div>
   </div>
 </div>
-<div id="page-produtos_estoque" class="page"></div>
 </div><!-- end app-root -->
 <!-- ── TELA DE LOGIN ─────────────────────────────────────── -->
 <div id="login-screen" style="display:none; position:fixed; inset:0; z-index:9999; background:#F5F6F8; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;">
