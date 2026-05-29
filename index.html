@@ -3123,27 +3123,26 @@ async function salvarProdutoEstoque(){
   if(editId){
     var idx = produtosEstoque.findIndex(function(p){ return p.id==editId; });
     if(idx > -1){
-      produtosEstoque[idx].nome        = nome;
-      produtosEstoque[idx].categoria   = document.getElementById('pe-categoria').value.trim();
-      produtosEstoque[idx].precoVenda  = parseFloat(document.getElementById('pe-preco-venda').value)||0;
-      produtosEstoque[idx].quantidade  = parseInt(document.getElementById('pe-quantidade').value)||0;
-      produtosEstoque[idx].estoqueMinimo = parseInt(document.getElementById('pe-minimo').value)||3;
-      produtosEstoque[idx].precoCusto  = parseFloat(document.getElementById('pe-preco-custo').value)||0;
-      produtosEstoque[idx].obs         = document.getElementById('pe-obs').value.trim();
+      produtosEstoque[idx].nome         = nome;
+      produtosEstoque[idx].categoria    = document.getElementById('pe-categoria').value.trim();
+      produtosEstoque[idx].precoVenda   = parseFloat(document.getElementById('pe-preco-venda').value)||0;
+      produtosEstoque[idx].quantidade   = parseInt(document.getElementById('pe-quantidade').value)||0;
+      produtosEstoque[idx].estoqueMinimo= parseInt(document.getElementById('pe-minimo').value)||3;
+      produtosEstoque[idx].precoCusto   = parseFloat(document.getElementById('pe-preco-custo').value)||0;
+      produtosEstoque[idx].obs          = document.getElementById('pe-obs').value.trim();
     }
   } else {
-    var novo = {
+    produtosEstoque.push({
       id: Date.now(),
       nome: nome,
-      categoria:    document.getElementById('pe-categoria').value.trim(),
-      precoVenda:   parseFloat(document.getElementById('pe-preco-venda').value)||0,
-      quantidade:   parseInt(document.getElementById('pe-quantidade').value)||0,
+      categoria:     document.getElementById('pe-categoria').value.trim(),
+      precoVenda:    parseFloat(document.getElementById('pe-preco-venda').value)||0,
+      quantidade:    parseInt(document.getElementById('pe-quantidade').value)||0,
       estoqueMinimo: parseInt(document.getElementById('pe-minimo').value)||3,
-      precoCusto:   parseFloat(document.getElementById('pe-preco-custo').value)||0,
-      obs:          document.getElementById('pe-obs').value.trim(),
+      precoCusto:    parseFloat(document.getElementById('pe-preco-custo').value)||0,
+      obs:           document.getElementById('pe-obs').value.trim(),
       historico: []
-    };
-    produtosEstoque.push(novo);
+    });
   }
   await salvarProdutosEstoque();
   fecharPeModal();
