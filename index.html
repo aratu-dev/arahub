@@ -1687,9 +1687,6 @@
       <div class="vagas-section" id="vagas-render"></div>
     </div>
 
-    <!-- PRODUTOS -->
-    <div class="page" id="page-produtos_estoque"></div>
-
   </div>
 </div>
 
@@ -3063,7 +3060,8 @@ function renderProdutosEstoque(){
   }
 
   var html =
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">'+
+    '<div class="content">'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px">'+
       '<div class="stat-card verde"><div class="stat-label">Produtos cadastrados</div><div class="stat-value">'+totalItens+'</div><div class="stat-desc">'+totalUnids+' unidades no total</div></div>'+
       '<div class="stat-card marrom"><div class="stat-label">Estoque baixo</div><div class="stat-value">'+estoqueBaixo.length+'</div><div class="stat-desc">'+(estoqueBaixo.length>0?'precisam de reposição':'tudo em ordem')+'</div></div>'+
       '<div class="stat-card '+(semEstoque.length>0?'sage':'escuro')+'"><div class="stat-label">Sem estoque</div><div class="stat-value">'+semEstoque.length+'</div><div class="stat-desc">'+(semEstoque.length>0?'produtos zerados':'nenhum zerado')+'</div></div>'+
@@ -3076,7 +3074,8 @@ function renderProdutosEstoque(){
         '<button class="btn-primary" onclick="abrirModalProdutoEstoque()" style="display:flex;align-items:center;gap:6px">+ Cadastrar Produto</button>'+
       '</div>'+
     '</div>'+
-    produtosHTML;
+    produtosHTML+
+    '</div>';
 
   document.getElementById('page-produtos_estoque').innerHTML = html;
 }
@@ -3098,6 +3097,57 @@ function registrarEntradaEstoque(id) {
   produtosEstoque[idx].quantidade += qtd;
   produtosEstoque[idx].historico.push({ tipo: 'entrada', qtd, data: hojeISO() });
   salvarProdutosEstoque().then(() => renderProdutosEstoque());
+}
+
+// -- Modal Cadastrar/Editar Produto --
+function abrirModalProdutoEstoque(id){
+  var p = id ? produtosEstoque.find(function(x){ return x.id==id; }) : null;
+  document.getElementById('pe-modal-title').textContent = p ? 'Editar Produto' : 'Cadastrar Produto';
+  document.getElementById('pe-nome').value        = p ? (p.nome||'') : '';
+  document.getElementById('pe-categoria').value   = p ? (p.categoria||'') : '';
+  document.getElementById('pe-preco-venda').value = p ? (p.precoVenda||'') : '';
+  document.getElementById('pe-quantidade').value  = p ? (p.quantidade||0) : '';
+  document.getElementById('pe-minimo').value      = p ? (p.estoqueMinimo||3) : '';
+  document.getElementById('pe-preco-custo').value = p ? (p.precoCusto||'') : '';
+  document.getElementById('pe-obs').value         = p ? (p.obs||'') : '';
+  document.getElementById('pe-overlay').dataset.editId = id || '';
+  document.getElementById('pe-overlay').classList.add('visible');
+}
+function fecharPeModal(){
+  document.getElementById('pe-overlay').classList.remove('visible');
+}
+async function salvarProdutoEstoque(){
+  var nome = document.getElementById('pe-nome').value.trim();
+  if(!nome){ alert('Informe o nome do produto.'); return; }
+  var editId = document.getElementById('pe-overlay').dataset.editId;
+  if(editId){
+    var idx = produtosEstoque.findIndex(function(p){ return p.id==editId; });
+    if(idx > -1){
+      produtosEstoque[idx].nome        = nome;
+      produtosEstoque[idx].categoria   = document.getElementById('pe-categoria').value.trim();
+      produtosEstoque[idx].precoVenda  = parseFloat(document.getElementById('pe-preco-venda').value)||0;
+      produtosEstoque[idx].quantidade  = parseInt(document.getElementById('pe-quantidade').value)||0;
+      produtosEstoque[idx].estoqueMinimo = parseInt(document.getElementById('pe-minimo').value)||3;
+      produtosEstoque[idx].precoCusto  = parseFloat(document.getElementById('pe-preco-custo').value)||0;
+      produtosEstoque[idx].obs         = document.getElementById('pe-obs').value.trim();
+    }
+  } else {
+    var novo = {
+      id: Date.now(),
+      nome: nome,
+      categoria:    document.getElementById('pe-categoria').value.trim(),
+      precoVenda:   parseFloat(document.getElementById('pe-preco-venda').value)||0,
+      quantidade:   parseInt(document.getElementById('pe-quantidade').value)||0,
+      estoqueMinimo: parseInt(document.getElementById('pe-minimo').value)||3,
+      precoCusto:   parseFloat(document.getElementById('pe-preco-custo').value)||0,
+      obs:          document.getElementById('pe-obs').value.trim(),
+      historico: []
+    };
+    produtosEstoque.push(novo);
+  }
+  await salvarProdutosEstoque();
+  fecharPeModal();
+  renderProdutosEstoque();
 }
 
 // -- Repor Estoque --
@@ -3954,6 +4004,7 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
     </div>
   </div>
 </div>
+<div id="page-produtos_estoque" class="page"></div>
 </div><!-- end app-root -->
 <!-- ── TELA DE LOGIN ─────────────────────────────────────── -->
 <div id="login-screen" style="display:none; position:fixed; inset:0; z-index:9999; background:#F5F6F8; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif;">
