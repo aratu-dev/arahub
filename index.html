@@ -7,7 +7,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arahub · Gestão de Clínicas</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bege-claro: #F5F6F8;
@@ -143,7 +143,7 @@
   }
 
   .topbar h2 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 22px;
     font-weight: 400;
     color: var(--texto-principal);
@@ -231,7 +231,7 @@
   }
 
   .stat-value {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 36px;
     font-weight: 400;
     color: var(--texto-principal);
@@ -279,7 +279,7 @@
   }
 
   .section-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 18px;
     font-weight: 400;
     letter-spacing: 0.01em;
@@ -339,7 +339,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
     font-weight: 500;
     flex-shrink: 0;
@@ -424,7 +424,7 @@
   }
 
   .dia-numero {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 32px;
     font-weight: 300;
     color: var(--marrom-medio);
@@ -514,7 +514,7 @@
   }
 
   .modal-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 22px;
     font-weight: 400;
   }
@@ -678,7 +678,7 @@
   }
 
   .cr-numero {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 40px;
     font-weight: 400;
     color: var(--marrom-escuro);
@@ -740,7 +740,7 @@
   }
 
   .cal-mes-titulo {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 26px;
     font-weight: 400;
     color: var(--texto-principal);
@@ -1149,7 +1149,7 @@
   }
 
   .fin-mini .fm-val {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 22px;
     font-weight: 400;
     color: var(--marrom-escuro);
@@ -1276,6 +1276,10 @@
 /* Desktop: hide mobile checkin actions */
 .checkin-acoes-mobile { display: none; }
 .col-prof, .col-acoes { display: table-cell; }
+@media (max-width: 768px) {
+  .col-prof, .col-acoes { display: none !important; }
+  .checkin-acoes-mobile { display: flex !important; }
+}
 
 @media (max-width: 768px) {
 
@@ -1290,7 +1294,10 @@
     flex-direction: row;
     padding: 0;
     z-index: 200;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid #E0E4EC;
+    border-right: none;
+    background: #fff;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
   }
 
   .sidebar-logo { display: none; }
@@ -1317,7 +1324,8 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: rgba(245,240,232,0.5);
+    color: #5A7A5A;
+    background: #fff;
   }
 
   .nav-item svg { width: 20px; height: 20px; }
@@ -1994,19 +2002,22 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-let clientes   = [];
-let avaliacoes = [];
-let consultas  = [];
+let clientes        = [];
+let avaliacoes      = [];
+let consultas       = [];
+let produtosEstoque = [];
 
 async function carregarDados() {
-  const [snapC, snapA, snapCo] = await Promise.all([
+  const [snapC, snapA, snapCo, snapP] = await Promise.all([
     db.collection('clientes').get(),
     db.collection('avaliacoes').get(),
     db.collection('consultas').get(),
+    db.collection('produtos_estoque').get(),
   ]);
-  clientes   = snapC.docs.map(d => d.data());
-  avaliacoes = snapA.docs.map(d => d.data());
-  consultas  = snapCo.docs.map(d => d.data());
+  clientes        = snapC.docs.map(d => d.data());
+  avaliacoes      = snapA.docs.map(d => d.data());
+  consultas       = snapCo.docs.map(d => d.data());
+  produtosEstoque = snapP.docs.map(d => d.data());
 
   // Dados de demonstração — só inseridos se o banco estiver vazio
   if(clientes.length === 0){
@@ -2087,6 +2098,15 @@ async function salvarConsultasStorage() {
   consultas.forEach(c => {
     const ref = db.collection('consultas').doc(String(c.id));
     batch.set(ref, c);
+  });
+  await batch.commit();
+}
+
+async function salvarProdutosEstoque() {
+  const batch = db.batch();
+  produtosEstoque.forEach(p => {
+    const ref = db.collection('produtos_estoque').doc(String(p.id));
+    batch.set(ref, p);
   });
   await batch.commit();
 }
@@ -2612,9 +2632,9 @@ function verDetalhe(id){
     <div class="detail-section">
       <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--texto-muted);margin-bottom:12px">Progresso do Tratamento</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
-        <div style="background:var(--bege-claro);border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1">${c.total}</div><div style="font-size:11px;color:var(--texto-muted);margin-top:4px">Total</div></div>
-        <div style="background:var(--verde-claro);border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--verde-escuro);line-height:1">${c.realizadas}</div><div style="font-size:11px;color:var(--verde-escuro);margin-top:4px">Realizadas</div></div>
-        <div style="background:#E8F0D8;border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1">${Math.max(0,restantes)}</div><div style="font-size:11px;color:var(--texto-muted);margin-top:4px">Restantes</div></div>
+        <div style="background:var(--bege-claro);border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'DM Sans',sans-serif;font-size:30px;line-height:1">${c.total}</div><div style="font-size:11px;color:var(--texto-muted);margin-top:4px">Total</div></div>
+        <div style="background:var(--verde-claro);border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'DM Sans',sans-serif;font-size:30px;color:var(--verde-escuro);line-height:1">${c.realizadas}</div><div style="font-size:11px;color:var(--verde-escuro);margin-top:4px">Realizadas</div></div>
+        <div style="background:#E8F0D8;border-radius:10px;padding:14px 16px;text-align:center"><div style="font-family:'DM Sans',sans-serif;font-size:30px;line-height:1">${Math.max(0,restantes)}</div><div style="font-size:11px;color:var(--texto-muted);margin-top:4px">Restantes</div></div>
       </div>
       <div style="height:7px;background:var(--bege-escuro);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:${pct}%;background:${pct>=90?'#7A9E70':pct>=75?'var(--marrom-claro)':'var(--verde-sage)'};border-radius:99px"></div></div>
       <div style="font-size:12px;color:var(--texto-muted);text-align:right">${pct}% concluído</div>
@@ -2924,6 +2944,7 @@ function salvarProduto(){
   if(!clientes[idx].produtos) clientes[idx].produtos=[];
   const vendedor=document.getElementById('prod-vendedor')?.value||'Luciana do Vale';
   clientes[idx].produtos.push({id:gerarId(), nome, valor, data, pgto:pgtoProdSel, pendente:pgtoProdSel==='pendente', obs:document.getElementById('prod-obs').value, vendedor});
+  vincularVendaAoEstoque(nome, 1); // desconta 1 unidade do estoque automaticamente
   salvarStorage(); fecharProd(); verDetalhe(prodClienteId);
 }
 function quitarProduto(clienteId, prodIdx){ if(!confirm('Confirmar recebimento?')) return; const idx=clientes.findIndex(c=>c.id==clienteId); if(idx===-1) return; clientes[idx].produtos[prodIdx].pendente=false; clientes[idx].produtos[prodIdx].pgto='pix'; salvarStorage(); verDetalhe(clienteId); }
@@ -2985,6 +3006,179 @@ function verProcedimentosAgendados(consultaId) {
   abrirProcedimentosClinica(consultaId);
 }
 
+
+
+// ── PRODUTOS ESTOQUE ────────────────────────────────────────────
+function renderProdutosEstoque(){
+  const alertas = produtosEstoque.filter(p => p.quantidade <= p.estoqueMinimo);
+  const totalItens = produtosEstoque.length;
+  const totalValor = produtosEstoque.reduce((s,p) => s + (p.precoCusto * p.quantidade), 0);
+
+  let html = `
+    <div class="content">
+      <div class="stats-grid" style="margin-bottom:20px">
+        <div class="stat-card verde">
+          <div class="stat-label">Total de produtos</div>
+          <div class="stat-value">${totalItens}</div>
+          <div class="stat-desc">itens cadastrados</div>
+        </div>
+        <div class="stat-card marrom">
+          <div class="stat-label">Valor em estoque</div>
+          <div class="stat-value" style="font-size:22px">${brl(totalValor)}</div>
+          <div class="stat-desc">custo total</div>
+        </div>
+        <div class="stat-card ${alertas.length > 0 ? 'sage' : 'escuro'}">
+          <div class="stat-label">Alertas de estoque</div>
+          <div class="stat-value">${alertas.length}</div>
+          <div class="stat-desc">${alertas.length > 0 ? 'abaixo do mínimo' : 'tudo em ordem'}</div>
+        </div>
+      </div>
+
+      ${alertas.length > 0 ? `
+        <div style="background:#FDECD0;border:1px solid #F5A623;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:20px">⚠️</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:#7A4A10;margin-bottom:4px">Estoque baixo</div>
+            <div style="font-size:12px;color:#7A4A10">${alertas.map(p => p.nome).join(', ')}</div>
+          </div>
+        </div>` : ''}
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:500;color:var(--texto-principal)">Catálogo de produtos</div>
+        <button class="btn-primary" onclick="abrirModalProdutoEstoque()" style="display:flex;align-items:center;gap:6px;padding:8px 16px">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo Produto
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead><tr>
+            <th>Produto</th>
+            <th>Preço venda</th>
+            <th>Custo</th>
+            <th>Estoque</th>
+            <th>Mín.</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr></thead>
+          <tbody>
+            ${produtosEstoque.length === 0 ?
+              '<tr><td colspan="7" style="text-align:center;color:var(--texto-muted);padding:32px">Nenhum produto cadastrado. Clique em "Novo Produto" para começar.</td></tr>' :
+              produtosEstoque.map(p => {
+                const status = p.quantidade === 0 ? 'sem-estoque' :
+                               p.quantidade <= p.estoqueMinimo ? 'baixo' : 'ok';
+                const statusLabel = status === 'sem-estoque' ? '🔴 Sem estoque' :
+                                    status === 'baixo' ? '🟡 Estoque baixo' : '🟢 OK';
+                const statusColor = status === 'sem-estoque' ? '#FAD5D5' :
+                                    status === 'baixo' ? '#FDECD0' : '#D6EDBE';
+                return `<tr>
+                  <td><div style="font-weight:500">${escapeHTML(p.nome)}</div><div style="font-size:11px;color:var(--texto-muted)">${escapeHTML(p.categoria||'')}</div></td>
+                  <td>${brl(p.precoVenda)}</td>
+                  <td>${brl(p.precoCusto)}</td>
+                  <td><strong style="font-size:15px">${p.quantidade}</strong> un.</td>
+                  <td>${p.estoqueMinimo} un.</td>
+                  <td><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${statusColor};font-weight:500">${statusLabel}</span></td>
+                  <td style="white-space:nowrap">
+                    <button class="btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px" onclick="editarProdutoEstoque('${p.id}')">Editar</button>
+                    <button class="btn-secondary" style="padding:4px 10px;font-size:12px;margin-right:4px;color:#1A4D7A;border-color:#A8C8E8" onclick="registrarEntradaEstoque('${p.id}')">+ Entrada</button>
+                    <button class="btn-secondary" style="padding:4px 10px;font-size:12px;color:#8B2020;border-color:#FAD5D5" onclick="excluirProdutoEstoque('${p.id}')">Excluir</button>
+                  </td>
+                </tr>`;
+              }).join('')
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('page-produtos_estoque').innerHTML = html;
+}
+
+// ── Modal produto estoque ──
+let prodEstoqueEditandoId = null;
+
+function abrirModalProdutoEstoque(id = null) {
+  prodEstoqueEditandoId = id;
+  const p = id ? produtosEstoque.find(x => x.id == id) : null;
+
+  document.getElementById('pe-nome').value       = p?.nome || '';
+  document.getElementById('pe-categoria').value  = p?.categoria || '';
+  document.getElementById('pe-preco-venda').value= p?.precoVenda || '';
+  document.getElementById('pe-preco-custo').value= p?.precoCusto || '';
+  document.getElementById('pe-quantidade').value = p?.quantidade ?? '';
+  document.getElementById('pe-minimo').value     = p?.estoqueMinimo || '3';
+  document.getElementById('pe-obs').value        = p?.obs || '';
+  document.getElementById('pe-modal-title').textContent = id ? 'Editar Produto' : 'Novo Produto';
+  document.getElementById('pe-overlay').classList.add('visible');
+}
+
+function fecharPeModal() {
+  document.getElementById('pe-overlay').classList.remove('visible');
+  prodEstoqueEditandoId = null;
+}
+
+async function salvarProdutoEstoque() {
+  const nome = document.getElementById('pe-nome').value.trim();
+  if (!nome) { alert('Informe o nome do produto.'); return; }
+  const preco = parseFloat(document.getElementById('pe-preco-venda').value) || 0;
+  const custo = parseFloat(document.getElementById('pe-preco-custo').value) || 0;
+  const qtd   = parseInt(document.getElementById('pe-quantidade').value) || 0;
+  const min   = parseInt(document.getElementById('pe-minimo').value) || 3;
+
+  if (prodEstoqueEditandoId) {
+    const idx = produtosEstoque.findIndex(p => p.id == prodEstoqueEditandoId);
+    if (idx !== -1) {
+      produtosEstoque[idx] = { ...produtosEstoque[idx], nome,
+        categoria: document.getElementById('pe-categoria').value,
+        precoVenda: preco, precoCusto: custo, quantidade: qtd,
+        estoqueMinimo: min, obs: document.getElementById('pe-obs').value };
+    }
+  } else {
+    produtosEstoque.push({
+      id: gerarId(), nome,
+      categoria: document.getElementById('pe-categoria').value,
+      precoVenda: preco, precoCusto: custo, quantidade: qtd,
+      estoqueMinimo: min, obs: document.getElementById('pe-obs').value,
+      criadoEm: hojeISO(), historico: []
+    });
+  }
+
+  await salvarProdutosEstoque();
+  fecharPeModal();
+  renderProdutosEstoque();
+}
+
+function editarProdutoEstoque(id) { abrirModalProdutoEstoque(id); }
+
+async function excluirProdutoEstoque(id) {
+  if (!confirm('Excluir este produto do catálogo?')) return;
+  produtosEstoque = produtosEstoque.filter(p => p.id != id);
+  await db.collection('produtos_estoque').doc(String(id)).delete();
+  renderProdutosEstoque();
+}
+
+function registrarEntradaEstoque(id) {
+  const qtd = parseInt(prompt('Quantas unidades estão entrando no estoque?'));
+  if (!qtd || qtd <= 0) return;
+  const idx = produtosEstoque.findIndex(p => p.id == id);
+  if (idx === -1) return;
+  if (!produtosEstoque[idx].historico) produtosEstoque[idx].historico = [];
+  produtosEstoque[idx].quantidade += qtd;
+  produtosEstoque[idx].historico.push({ tipo: 'entrada', qtd, data: hojeISO() });
+  salvarProdutosEstoque().then(() => renderProdutosEstoque());
+}
+
+// ── Venda de produto: desconta do estoque automaticamente ──
+function vincularVendaAoEstoque(nomeProduto, qtd = 1) {
+  const idx = produtosEstoque.findIndex(p =>
+    p.nome.toLowerCase().trim() === nomeProduto.toLowerCase().trim()
+  );
+  if (idx === -1) return; // produto não cadastrado no estoque, sem problema
+  if (!produtosEstoque[idx].historico) produtosEstoque[idx].historico = [];
+  produtosEstoque[idx].quantidade = Math.max(0, produtosEstoque[idx].quantidade - qtd);
+  produtosEstoque[idx].historico.push({ tipo: 'saida', qtd, data: hojeISO() });
+  salvarProdutosEstoque();
+}
 
 // ── ANAMNESE ────────────────────────────────────────────────────
 let anamneseAvaliacaoId = null;
@@ -3230,7 +3424,7 @@ function renderAnamneseSecao() {
   let html = `
     <div style="margin-bottom:24px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--verde-escuro)">${secao.titulo}</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:22px;color:var(--verde-escuro)">${secao.titulo}</div>
         ${isProfissional ? `<span style="font-size:10px;padding:3px 10px;background:#E8F0D8;color:var(--verde-escuro);border-radius:20px;font-weight:500">Terapeuta</span>` : `<span style="font-size:10px;padding:3px 10px;background:#E6F1FB;color:#185FA5;border-radius:20px;font-weight:500">Paciente</span>`}
       </div>
       <div style="font-size:13px;color:var(--texto-muted)">${secao.subtitulo}</div>
@@ -3511,6 +3705,8 @@ document.getElementById('login-senha')?.addEventListener('keydown', e => {
 
 </script>
 
+<div id="page-produtos_estoque" class="page" style="display:none"></div>
+
 <!-- MODAL CHECK-IN (substitui prompt()) -->
 <div class="modal-overlay" id="checkin-overlay" onclick="if(event.target===this)fecharCheckin()">
   <div class="modal" style="width:460px">
@@ -3673,7 +3869,7 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
     <!-- Header fixo -->
     <div style="position:sticky;top:0;z-index:10;background:var(--verde-escuro);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#F5F0E8;letter-spacing:.04em">Ficha de Anamnese</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:18px;color:#F5F0E8;letter-spacing:.04em">Ficha de Anamnese</div>
         <div style="font-size:11px;color:rgba(245,240,232,0.6);margin-top:2px" id="anamnese-subtitulo">Luciana do Vale · Clínica Capilar</div>
       </div>
       <button onclick="fecharAnamnese()" style="background:rgba(255,255,255,0.12);border:none;color:#F5F0E8;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
@@ -3724,6 +3920,56 @@ document.getElementById('checkin-profissional').innerHTML = EQUIPE_LV.map(n=>`<o
       <button class="btn-primary" onclick="salvarProcedimentosClinica()" style="background:var(--verde-escuro)">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL PRODUTO ESTOQUE -->
+<div class="modal-overlay" id="pe-overlay" onclick="if(event.target===this)fecharPeModal()">
+  <div class="modal" style="width:500px">
+    <div class="modal-header">
+      <div class="modal-title" id="pe-modal-title">Novo Produto</div>
+      <button class="modal-close" onclick="fecharPeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label>Nome do produto *</label>
+          <input type="text" id="pe-nome" placeholder="Ex: Shampoo Antiqueda 300ml">
+        </div>
+        <div class="form-group span2">
+          <label>Categoria</label>
+          <input type="text" id="pe-categoria" placeholder="Ex: Shampoo, Ampola, Leave-in...">
+        </div>
+        <div class="form-group">
+          <label>Preço de venda (R$) *</label>
+          <input type="number" id="pe-preco-venda" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Preço de custo (R$)</label>
+          <input type="number" id="pe-preco-custo" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Quantidade em estoque *</label>
+          <input type="number" id="pe-quantidade" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Estoque mínimo (alerta)</label>
+          <input type="number" id="pe-minimo" min="0" placeholder="3">
+        </div>
+        <div class="form-group span2">
+          <label>Observações</label>
+          <input type="text" id="pe-obs" placeholder="Marca, fornecedor, validade...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharPeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarProdutoEstoque()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Salvar Produto
       </button>
     </div>
   </div>
